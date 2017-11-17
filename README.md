@@ -3,7 +3,7 @@
 [![GoDoc](https://godoc.org/github.com/hscells/boogie?status.svg)](https://godoc.org/github.com/hscells/boogie)
 [![Go Report Card](https://goreportcard.com/badge/github.com/hscells/boogie)](https://goreportcard.com/report/github.com/hscells/boogie)
 
-_DSL front-end for [groove](https://github.com/hscells/boogie)_
+_DSL front-end for [groove](https://github.com/hscells/groove)_
 
 ## Installation
 
