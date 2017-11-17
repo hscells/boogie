@@ -11,6 +11,11 @@ import (
 	"github.com/hscells/groove/pipeline"
 	"io/ioutil"
 	"log"
+	"github.com/hscells/groove/preprocess"
+)
+
+var (
+	dsl Pipeline
 )
 
 type args struct {
@@ -31,9 +36,6 @@ For information about groove, see https://github.com/hscells/groove.`
 }
 
 func main() {
-	// Register the sources used in the groove pipeline.
-	RegisterSources()
-
 	// Parse the command line arguments.
 	var args args
 	arg.MustParse(&args)
@@ -45,18 +47,20 @@ func main() {
 	}
 
 	// Parse the dsl file into a struct.
-	var dsl Pipeline
 	err = json.Unmarshal(b, &dsl)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Register the sources used in the groove pipeline.
+	RegisterSources()
+
 	// Create a groove pipeline from the boogie dsl.
 	g := pipeline.GroovePipeline{}
-	if s, ok := querySourceMapping[dsl.Query.Source]; ok {
+	if s, ok := querySourceMapping[dsl.Query.Format]; ok {
 		g.QueriesSource = s
 	} else {
-		log.Fatalf("%v is not a known query source", dsl.Query.Source)
+		log.Fatalf("%v is not a known query source", dsl.Query.Format)
 	}
 
 	if s, ok := statisticSourceMapping[dsl.Statistic.Source]; ok {
@@ -80,6 +84,15 @@ func main() {
 			g.OutputFormats = append(g.OutputFormats, o)
 		} else {
 			log.Fatalf("%v is not a known output format", formatter.Format)
+		}
+	}
+
+	g.Preprocess = []preprocess.QueryProcessor{}
+	for _, p := range dsl.Preprocess {
+		if processor, ok := preprocessorMapping[p]; ok {
+			g.Preprocess = append(g.Preprocess, processor)
+		} else {
+			log.Fatalf("%v is not a known preprocessor", p)
 		}
 	}
 

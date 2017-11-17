@@ -4,18 +4,20 @@ package main
 type Pipeline struct {
 	Query        PipelineQuery     `json:"query"`
 	Statistic    PipelineStatistic `json:"statistic"`
+	Preprocess   []string          `json:"preprocess"`
 	Measurements []string          `json:"measurements"`
 	Output       []PipelineOutput  `json:"output"`
 }
 
 // PipelineQuery represents a query source in the DSL.
 type PipelineQuery struct {
-	Source string `json:"source"`
+	Format string `json:"format"`
 }
 
 // PipelineStatistic represents a statistic source in the DSL.
 type PipelineStatistic struct {
-	Source string `json:"source"`
+	Source  string                 `json:"source"`
+	Options map[string]interface{} `json:"options"`
 }
 
 // PipelineOutput represents an output formatter in the DSL.
