@@ -8,28 +8,28 @@ import (
 )
 
 var (
-	QuerySourceMapping     = map[string]query.QueriesSource{}
-	StatisticSourceMapping = map[string]stats.StatisticsSource{}
-	MeasurementMapping     = map[string]analysis.Measurement{}
-	OutputMapping          = map[string]output.Formatter{}
+	querySourceMapping     = map[string]query.QueriesSource{}
+	statisticSourceMapping = map[string]stats.StatisticsSource{}
+	measurementMapping     = map[string]analysis.Measurement{}
+	outputMapping          = map[string]output.Formatter{}
 )
 
 // RegisterQuerySource registers a query source.
 func RegisterQuerySource(name string, source query.QueriesSource) {
-	QuerySourceMapping[name] = source
+	querySourceMapping[name] = source
 }
 
 // RegisterStatisticSource registers a statistic source.
 func RegisterStatisticSource(name string, source stats.StatisticsSource) {
-	StatisticSourceMapping[name] = source
+	statisticSourceMapping[name] = source
 }
 
 // RegisterMeasurement registers a measurement.
 func RegisterMeasurement(name string, measurement analysis.Measurement) {
-	MeasurementMapping[name] = measurement
+	measurementMapping[name] = measurement
 }
 
 // RegisterOutput registers an output formatter.
 func RegisterOutput(name string, formatter output.Formatter) {
-	OutputMapping[name] = formatter
+	outputMapping[name] = formatter
 }

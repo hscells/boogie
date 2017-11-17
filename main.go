@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/alexflint/go-arg"
 	"github.com/hscells/groove/analysis"
@@ -10,7 +11,6 @@ import (
 	"github.com/hscells/groove/pipeline"
 	"io/ioutil"
 	"log"
-	"bytes"
 )
 
 type args struct {
@@ -53,13 +53,13 @@ func main() {
 
 	// Create a groove pipeline from the boogie dsl.
 	g := pipeline.GroovePipeline{}
-	if s, ok := QuerySourceMapping[dsl.Query.Source]; ok {
+	if s, ok := querySourceMapping[dsl.Query.Source]; ok {
 		g.QueriesSource = s
 	} else {
 		log.Fatalf("%v is not a known query source", dsl.Query.Source)
 	}
 
-	if s, ok := StatisticSourceMapping[dsl.Statistic.Source]; ok {
+	if s, ok := statisticSourceMapping[dsl.Statistic.Source]; ok {
 		g.StatisticsSource = s
 	} else {
 		log.Fatalf("%v is not a known statistics source", dsl.Statistic.Source)
@@ -67,7 +67,7 @@ func main() {
 
 	g.Measurements = []analysis.Measurement{}
 	for _, measurementName := range dsl.Measurements {
-		if m, ok := MeasurementMapping[measurementName]; ok {
+		if m, ok := measurementMapping[measurementName]; ok {
 			g.Measurements = append(g.Measurements, m)
 		} else {
 			log.Fatalf("%v is not a known measurement", measurementName)
@@ -76,10 +76,10 @@ func main() {
 
 	g.OutputFormats = []output.Formatter{}
 	for _, formatter := range dsl.Output {
-		if o, ok := OutputMapping[formatter.Format]; ok {
+		if o, ok := outputMapping[formatter.Format]; ok {
 			g.OutputFormats = append(g.OutputFormats, o)
 		} else {
-			log.Fatalf("%v is not a known ouput format", formatter.Format)
+			log.Fatalf("%v is not a known output format", formatter.Format)
 		}
 	}
 
