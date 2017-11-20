@@ -11,7 +11,8 @@ type Pipeline struct {
 
 // PipelineQuery represents a query source in the DSL.
 type PipelineQuery struct {
-	Format string `json:"format"`
+	Format  string                 `json:"format"`
+	Options map[string]interface{} `json:"options"`
 }
 
 // PipelineStatistic represents a statistic source in the DSL.
