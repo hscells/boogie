@@ -13,6 +13,7 @@ var (
 	querySourceMapping     = map[string]query.QueriesSource{}
 	statisticSourceMapping = map[string]stats.StatisticsSource{}
 	preprocessorMapping    = map[string]preprocess.QueryProcessor{}
+	transformationMapping  = map[string]preprocess.Transformation{}
 	measurementMapping     = map[string]analysis.Measurement{}
 	outputMapping          = map[string]output.Formatter{}
 )
@@ -30,6 +31,10 @@ func RegisterStatisticSource(name string, source stats.StatisticsSource) {
 // RegisterStatisticSource registers a statistic source.
 func RegisterPreprocessor(name string, preprocess preprocess.QueryProcessor) {
 	preprocessorMapping[name] = preprocess
+}
+
+func RegisterTransformation(name string, transformation preprocess.Transformation) {
+	transformationMapping[name] = transformation
 }
 
 // RegisterMeasurement registers a measurement.

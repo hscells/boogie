@@ -12,6 +12,8 @@ import (
 	"io/ioutil"
 	"log"
 	"github.com/hscells/groove/preprocess"
+	"github.com/hscells/transmute/backend"
+	"path/filepath"
 )
 
 var (
@@ -29,7 +31,7 @@ func (args) Version() string {
 
 func (args) Description() string {
 	return `DSL front-end for groove.
-For further documentation see https://godoc.org/github.com/hscells/boogie.
+ For further documentation see https://godoc.org/github.com/hscells/boogie.
 To view the source or to contribute see https://github.com/hscells/boogie.
 
 For information about groove, see https://github.com/hscells/groove.`
@@ -63,10 +65,24 @@ func main() {
 		log.Fatalf("%v is not a known query source", dsl.Query.Format)
 	}
 
-	if s, ok := statisticSourceMapping[dsl.Statistic.Source]; ok {
-		g.StatisticsSource = s
-	} else {
-		log.Fatalf("%v is not a known statistics source", dsl.Statistic.Source)
+	if len(dsl.Statistic.Source) > 0 {
+		if s, ok := statisticSourceMapping[dsl.Statistic.Source]; ok {
+			g.StatisticsSource = s
+		} else {
+			log.Fatalf("%v is not a known statistics source", dsl.Statistic.Source)
+		}
+	}
+
+	if len(dsl.Statistic.Source) == 0 && len(dsl.Measurements) > 0 {
+		log.Fatal("A statistic source is required for measurements")
+	}
+
+	if len(dsl.Measurements) > 0 && len(dsl.Output) == 0 {
+		log.Fatal("At least one output format must be supplied when using measurements")
+	}
+
+	if len(dsl.Output) > 0 && len(dsl.Measurements) == 0 {
+		log.Fatal("At least one measurement must be supplied for the output formats")
 	}
 
 	g.Measurements = []analysis.Measurement{}
@@ -96,15 +112,34 @@ func main() {
 		}
 	}
 
+	g.Transformations = preprocess.QueryTransformations{}
+	for _, t := range dsl.Transformations.Operations {
+		if transformation, ok := transformationMapping[t]; ok {
+			g.Transformations.Transformations = append(g.Transformations.Transformations, transformation)
+		} else {
+			log.Fatalf("%v is not a known transformation", t)
+		}
+	}
+	g.Transformations.Output = dsl.Transformations.Output
+
 	// Execute the groove pipeline.
-	outputs, err := g.Execute(args.Queries)
+	result, err := g.Execute(args.Queries)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Process the outputs.
 	for i, formatter := range dsl.Output {
-		err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(outputs[i]).Bytes(), 0644)
+		err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(result.Measurements[i]).Bytes(), 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// Output the transformed queries
+	for _, queryResult := range result.Transformations {
+		q := bytes.NewBufferString(backend.NewCQRQuery(queryResult.Transformation).StringPretty()).Bytes()
+		err := ioutil.WriteFile(filepath.Join(g.Transformations.Output, queryResult.Name), q, 0644)
 		if err != nil {
 			log.Fatal(err)
 		}

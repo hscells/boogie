@@ -15,11 +15,16 @@ func RegisterSources() {
 	RegisterQuerySource("pubmed", NewTransmuteQuerySource(query.PubMedTransmutePipeline, dsl.Query.Options))
 
 	// Statistic sources.
-	RegisterStatisticSource("elasticsearch", NewElasticsearchStatisticsSource(dsl.Statistic.Options))
+	if len(dsl.Statistic.Source) > 0 {
+		RegisterStatisticSource("elasticsearch", NewElasticsearchStatisticsSource(dsl.Statistic.Options))
+	}
 
 	// Preprocessor sources.
 	RegisterPreprocessor("alphanum", preprocess.AlphaNum)
 	RegisterPreprocessor("lowercase", preprocess.Lowercase)
+
+	// Transformations.
+	RegisterTransformation("simplify", preprocess.Simplify)
 
 	// Measurement sources.
 	RegisterMeasurement("term_count", analysis.TermCount{})
