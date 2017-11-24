@@ -77,24 +77,50 @@ Query formats are specified using the `format`, the different query formats and 
 
 The options for the `pubmed` format are the same as `medline`.
 
-### Preprocess (`preprocess`)
-
-Preprocessing is performed before analysing a query. This component accepts a list of preprocessors:
-
- - `alphanum`: Remove non-alphanumeric characters.
- - `lowercase`: Transform uppercase characters to lowercase.
-
 ### Statistic (`statistic`)
 
 Statistic sources provide common information retrieval methods. They are specified using `source`. The source component
-and options are detailed below.
+and options are detailed below. groove/boogie does not attempt to configure information retrieval systems (e.g. sources
+for statistics), only attempt to wrap them in some way. For this reason, you should read how to set up these systems
+before using boogie.
 
 #### `elasticsearch`
 
  - `hosts`: Specify a list of Elasticsearch urls (e.g. http://example.com:9200)
  - `document_type`: Elasticsearch document type.
  - `index`: Elasticsearch index to run experiments on.
+
+#### `terrier`
+
+ - `properties`: Location of the terrier properties file.
+
+#### Universal options:
+
  - `field`: Document field for analysis.
+ - `params`: Map of parameter name to float value (e.g. k, lambda).
+ - `search`: Search properties; `size` (maximum number of results to retrieve), `run_name` (name of the run for trec)
+
+### Query Preprocessing (`preprocess`)
+
+Preprocessing is performed before analysing a query. This component accepts a list of preprocessors:
+
+ - `alphanum`: Remove non-alphanumeric characters.
+ - `lowercase`: Transform uppercase characters to lowercase.
+
+### Query Transformations (`transformations`)
+
+Query transformations are operations that change queries beyond simple string manipulation. For instance, a
+transformation can simplify a query, or replace Boolean operators. The output directory and a list of transformations
+can be specified. If the directory is not present, no queries will be output.
+
+ - `output`: Directory to output transformed queries to.
+ - `operations`: List of transformations to apply (see below).
+
+The possible query transformation operations are listed as follows:
+
+ - `simplify`: Simplify a Boolean query to just "and" and "or" operators.
+
+Operations are applied in the order specified.
 
 ### Measurements (`measurements`)
 
@@ -110,6 +136,8 @@ floating point number. This component accepts a list of preprocessors:
  - `max_cqs` - Max Collection Query Similarity.
  - `scs` - Simplified Clarity Score.
  - `query_scope` - Query Scope.
+ - `wig` - Weighted Information Gain.
+ - `weg` - Weighted Entropy Gain.
 
 ### Output (`output`)
 
@@ -119,6 +147,13 @@ where to write the file, and the `format` is the format of the file. The formats
 
  - `json`: JSON formatting.
  - `csv`: Comma separated formatting.
+
+### Trec Results (`trec`)
+
+Tell groove whether to output trec result files or not. If the `output` key is present, the results will be output to
+file specified.
+
+ - `output`: Where to output trec result file to.
 
 ## Extending
 
