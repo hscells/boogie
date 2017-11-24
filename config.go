@@ -6,7 +6,6 @@ import (
 	"github.com/hscells/groove/query"
 	"github.com/hscells/groove/analysis/preqpp"
 	"github.com/hscells/groove/preprocess"
-	"github.com/hscells/groove/stats"
 	"log"
 	"github.com/hscells/groove/analysis/postqpp"
 )
@@ -22,7 +21,7 @@ func RegisterSources() {
 	case "elasticsearch":
 		RegisterStatisticSource(s, NewElasticsearchStatisticsSource(dsl.Statistic.Options))
 	case "terrier":
-		RegisterStatisticSource("terrier", stats.NewTerrierStatisticsSource(stats.TerrierPropertiesPath("/Users/harryscells/terrier-core-4.2/etc/terrier.properties")))
+		RegisterStatisticSource(s, NewTerrierStatisticsSource(dsl.Statistic.Options))
 	default:
 		log.Fatalf("could not load statistic source %s", s)
 	}
