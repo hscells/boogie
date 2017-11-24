@@ -8,12 +8,14 @@ type Pipeline struct {
 	Transformations PipelineTransformation   `json:"transformations"`
 	Measurements    []string                 `json:"measurements"`
 	Output          []PipelineOutput         `json:"output"`
+	Trec            PipelineTrec             `json:"trec"`
 }
 
 // PipelineQuery represents a query source in the DSL.
 type PipelineQuery struct {
-	Format  string                 `json:"format"`
-	Options map[string]interface{} `json:"options"`
+	Format        string                 `json:"format"`
+	Options       map[string]interface{} `json:"options"`
+	SearchOptions map[string]interface{} `json:"search"`
 }
 
 // PipelineStatistic represents a statistic source in the DSL.
@@ -32,4 +34,8 @@ type PipelineOutput struct {
 type PipelineTransformation struct {
 	Output     string   `json:"output"`
 	Operations []string `json:"operations"`
+}
+
+type PipelineTrec struct {
+	Output string `json:"output"`
 }

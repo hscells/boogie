@@ -14,6 +14,7 @@ import (
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/transmute/backend"
 	"path/filepath"
+	"strings"
 )
 
 var (
@@ -26,7 +27,7 @@ type args struct {
 }
 
 func (args) Version() string {
-	return "boogie 17.Nov.2017"
+	return "boogie 24.Nov.2017"
 }
 
 func (args) Description() string {
@@ -122,6 +123,8 @@ func main() {
 	}
 	g.Transformations.Output = dsl.Transformations.Output
 
+	g.OutputTrec.Path = dsl.Trec.Output
+
 	// Execute the groove pipeline.
 	result, err := g.Execute(args.Queries)
 	if err != nil {
@@ -137,11 +140,21 @@ func main() {
 	}
 
 	// Output the transformed queries
-	for _, queryResult := range result.Transformations {
-		q := bytes.NewBufferString(backend.NewCQRQuery(queryResult.Transformation).StringPretty()).Bytes()
-		err := ioutil.WriteFile(filepath.Join(g.Transformations.Output, queryResult.Name), q, 0644)
-		if err != nil {
-			log.Fatal(err)
+	if len(dsl.Transformations.Output) > 0 {
+		for _, queryResult := range result.Transformations {
+			q := bytes.NewBufferString(backend.NewCQRQuery(queryResult.Transformation).StringPretty()).Bytes()
+			err := ioutil.WriteFile(filepath.Join(g.Transformations.Output, queryResult.Name), q, 0644)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
+	}
+
+	if len(*result.TrecResults) > 0 {
+		l := make([]string, len(*result.TrecResults))
+		for i, r := range *result.TrecResults {
+			l[i] = r.String()
+		}
+		ioutil.WriteFile(g.OutputTrec.Path, []byte(strings.Join(l, "\n")), 0644)
 	}
 }

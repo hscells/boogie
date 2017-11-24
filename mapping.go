@@ -59,7 +59,7 @@ func NewTransmuteQuerySource(p pipeline.TransmutePipeline, options map[string]in
 
 // NewElasticsearchStatisticsSource attempts to create an Elasticsearch statistics source from a configuration mapping.
 // It also tries to set some defaults for fields in case some are not specified, but they will not be sensible.
-func NewElasticsearchStatisticsSource(config map[string]interface{}) stats.ElasticsearchStatisticsSource {
+func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.ElasticsearchStatisticsSource {
 	esHosts := []string{}
 	documentType := "doc"
 	index := "index"
@@ -71,6 +71,26 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) stats.Elast
 		}
 	} else {
 		esHosts = []string{"http://localhost:9200"}
+	}
+
+	var searchOptions stats.SearchOptions
+	if search, ok := config["search"].(map[string]interface{}); ok {
+		if size, ok := search["size"].(int); ok {
+			searchOptions.Size = size
+		} else {
+			searchOptions.Size = 1000
+		}
+
+		if runName, ok := search["run_name"].(string); ok {
+			searchOptions.RunName = runName
+		} else {
+			searchOptions.RunName = "run"
+		}
+	}
+
+	params := map[string]float64{"k": 10, "lambda": 0.5}
+	if p, ok := config["params"].(map[string]float64); ok {
+		params = p
 	}
 
 	if d, ok := config["document_type"]; ok {
@@ -85,9 +105,11 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) stats.Elast
 		field = f.(string)
 	}
 
-	return *stats.NewElasticsearchStatisticsSource(
-		stats.ElasticsearchHosts(esHosts...),
+	return stats.NewElasticsearchStatisticsSource(
 		stats.ElasticsearchDocumentType(documentType),
 		stats.ElasticsearchIndex(index),
-		stats.ElasticsearchField(field))
+		stats.ElasticsearchField(field),
+		stats.ElasticsearchHosts(esHosts...),
+		stats.ElasticsearchParameters(params),
+		stats.ElasticsearchSearchOptions(searchOptions))
 }
