@@ -1,3 +1,5 @@
+<img height="200px" src="gopher.png" alt="gopher" align="right"/>
+
 # boogie
 
 [![GoDoc](https://godoc.org/github.com/hscells/boogie?status.svg)](https://godoc.org/github.com/hscells/boogie)
@@ -160,3 +162,8 @@ file specified.
 Adding a query format, statistics source, preprocessing step, measurement, or output format requires firstly to
 implement the corresponding [groove](https://github.com/hscells/groove) interface. Once an interface has been
 implemented, it can be added to boogie by registering it in the [config](config.go).
+
+## Logo
+
+The Go gopher was created by [Renee French](https://reneefrench.blogspot.com/), licensed under
+[Creative Commons 3.0 Attributions license](https://creativecommons.org/licenses/by/3.0/).
