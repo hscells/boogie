@@ -7,6 +7,17 @@
 
 _DSL front-end for [groove](https://github.com/hscells/groove)_
 
+Often, we would like to abstract away the way we perform measurements (e.g. query performance prediction) or the way we
+transform queries (e.g. query expansion/reduction); and we would like to do these things in a repeatable, reproducible
+manner. This is where boogie comes in: an experiment is represented as a pipeline of operations that cover the format
+of queries, the source for statistics, the operations and measurements for each query, and how the experiment is to be
+output. boogie translates a simple DSL syntax into a [groove](https://github.com/hscells/groove) pipeline. Both groove
+and boogie are designed to be easily extendable and offer sane, simple abstractions.
+
+The most important abstraction is the statistic source. A boogie pipeline does not worry itself with how documents are
+stored or the structure of your index; only how to access the source of documents. In this way, boogie separates
+how you choose to store your documents from how you get your experiments done. boogie down.
+
 ## Installation
 
 boogie can be installed with `go get`.
@@ -108,7 +119,7 @@ request to the Elasticsearch term vectors API will look like this:
     "field_statistics": false,
     "offsets": false,
     "positions": false,
-    "payloads": false
+    "payloads": false,
     "fields": ["text.keyword"],
     "per_field_analyzer": {
         "text.keyword": ""
