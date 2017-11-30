@@ -152,7 +152,8 @@ func main() {
 		}
 	}
 
-	if len(*result.TrecResults) > 0 {
+	// Output the trec results, if specified.
+	if result.TrecResults != nil && len(*result.TrecResults) > 0 {
 		l := make([]string, len(*result.TrecResults))
 		for i, r := range *result.TrecResults {
 			l[i] = r.String()

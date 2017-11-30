@@ -30,7 +30,6 @@ func RegisterSources() {
 	// Preprocessor sources.
 	RegisterPreprocessor("alphanum", preprocess.AlphaNum)
 	RegisterPreprocessor("lowercase", preprocess.Lowercase)
-	RegisterPreprocessor("lucene4ir", preprocess.Lucene4IRRegexp)
 	RegisterPreprocessor("strip_numbers", preprocess.StripNumbers)
 
 	// Transformations.

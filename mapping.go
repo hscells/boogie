@@ -118,6 +118,7 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.Elas
 	index := "index"
 	field := "text"
 	analyser := "standard"
+	analyse_field := ""
 
 	if hosts, ok := config["hosts"]; ok {
 		for _, host := range hosts.([]interface{}) {
@@ -163,6 +164,10 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.Elas
 		analyser = a.(string)
 	}
 
+	if a, ok := config["analyse_field"]; ok {
+		analyse_field = a.(string)
+	}
+
 	return stats.NewElasticsearchStatisticsSource(
 		stats.ElasticsearchDocumentType(documentType),
 		stats.ElasticsearchIndex(index),
@@ -170,5 +175,6 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.Elas
 		stats.ElasticsearchHosts(esHosts...),
 		stats.ElasticsearchParameters(params),
 		stats.ElasticsearchAnalyser(analyser),
+		stats.ElasticsearchAnalysedField(analyse_field),
 		stats.ElasticsearchSearchOptions(searchOptions))
 }
