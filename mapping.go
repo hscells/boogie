@@ -10,12 +10,13 @@ import (
 )
 
 var (
-	querySourceMapping     = map[string]query.QueriesSource{}
-	statisticSourceMapping = map[string]stats.StatisticsSource{}
-	preprocessorMapping    = map[string]preprocess.QueryProcessor{}
-	transformationMapping  = map[string]preprocess.Transformation{}
-	measurementMapping     = map[string]analysis.Measurement{}
-	outputMapping          = map[string]output.Formatter{}
+	querySourceMapping                 = map[string]query.QueriesSource{}
+	statisticSourceMapping             = map[string]stats.StatisticsSource{}
+	preprocessorMapping                = map[string]preprocess.QueryProcessor{}
+	transformationMappingBoolean       = map[string]preprocess.BooleanTransformation{}
+	transformationMappingElasticsearch = map[string]preprocess.ElasticsearchTransformation{}
+	measurementMapping                 = map[string]analysis.Measurement{}
+	outputMapping                      = map[string]output.Formatter{}
 )
 
 // RegisterQuerySource registers a query source.
@@ -33,8 +34,12 @@ func RegisterPreprocessor(name string, preprocess preprocess.QueryProcessor) {
 	preprocessorMapping[name] = preprocess
 }
 
-func RegisterTransformation(name string, transformation preprocess.Transformation) {
-	transformationMapping[name] = transformation
+func RegisterTransformationBoolean(name string, transformation preprocess.BooleanTransformation) {
+	transformationMappingBoolean[name] = transformation
+}
+
+func RegisterTransformationElasticsearch(name string, transformation preprocess.ElasticsearchTransformation) {
+	transformationMappingElasticsearch[name] = transformation
 }
 
 // RegisterMeasurement registers a measurement.
@@ -45,6 +50,18 @@ func RegisterMeasurement(name string, measurement analysis.Measurement) {
 // RegisterOutput registers an output formatter.
 func RegisterOutput(name string, formatter output.Formatter) {
 	outputMapping[name] = formatter
+}
+
+func NewKeywordQuerySource(options map[string]interface{}) query.QueriesSource {
+	fields := []string{"text"}
+	if optionFields, ok := options["fields"].([]interface{}); ok {
+		fields = make([]string, len(optionFields))
+		for i, f := range optionFields {
+			fields[i] = f.(string)
+		}
+	}
+
+	return query.NewKeywordQuerySource(fields...)
 }
 
 func NewTransmuteQuerySource(p pipeline.TransmutePipeline, options map[string]interface{}) query.QueriesSource {
@@ -100,6 +117,7 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.Elas
 	documentType := "doc"
 	index := "index"
 	field := "text"
+	analyser := "standard"
 
 	if hosts, ok := config["hosts"]; ok {
 		for _, host := range hosts.([]interface{}) {
@@ -141,11 +159,16 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.Elas
 		field = f.(string)
 	}
 
+	if a, ok := config["analyser"]; ok {
+		analyser = a.(string)
+	}
+
 	return stats.NewElasticsearchStatisticsSource(
 		stats.ElasticsearchDocumentType(documentType),
 		stats.ElasticsearchIndex(index),
 		stats.ElasticsearchField(field),
 		stats.ElasticsearchHosts(esHosts...),
 		stats.ElasticsearchParameters(params),
+		stats.ElasticsearchAnalyser(analyser),
 		stats.ElasticsearchSearchOptions(searchOptions))
 }

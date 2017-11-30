@@ -115,8 +115,10 @@ func main() {
 
 	g.Transformations = preprocess.QueryTransformations{}
 	for _, t := range dsl.Transformations.Operations {
-		if transformation, ok := transformationMapping[t]; ok {
-			g.Transformations.Transformations = append(g.Transformations.Transformations, transformation)
+		if transformation, ok := transformationMappingBoolean[t]; ok {
+			g.Transformations.BooleanTransformations = append(g.Transformations.BooleanTransformations, transformation)
+		} else if transformation, ok := transformationMappingElasticsearch[t]; ok {
+			g.Transformations.ElasticsearchTransformations = append(g.Transformations.ElasticsearchTransformations, transformation)
 		} else {
 			log.Fatalf("%v is not a known transformation", t)
 		}

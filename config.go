@@ -15,6 +15,7 @@ func RegisterSources() {
 	// Query sources.
 	RegisterQuerySource("medline", NewTransmuteQuerySource(query.MedlineTransmutePipeline, dsl.Query.Options))
 	RegisterQuerySource("pubmed", NewTransmuteQuerySource(query.PubMedTransmutePipeline, dsl.Query.Options))
+	RegisterQuerySource("keyword", NewKeywordQuerySource(dsl.Query.Options))
 
 	// Statistic sources.
 	switch s := dsl.Statistic.Source; s {
@@ -29,9 +30,12 @@ func RegisterSources() {
 	// Preprocessor sources.
 	RegisterPreprocessor("alphanum", preprocess.AlphaNum)
 	RegisterPreprocessor("lowercase", preprocess.Lowercase)
+	RegisterPreprocessor("lucene4ir", preprocess.Lucene4IRRegexp)
+	RegisterPreprocessor("strip_numbers", preprocess.StripNumbers)
 
 	// Transformations.
-	RegisterTransformation("simplify", preprocess.Simplify)
+	RegisterTransformationBoolean("simplify", preprocess.Simplify)
+	RegisterTransformationElasticsearch("analyse", preprocess.Analyse)
 
 	// Measurement sources.
 	RegisterMeasurement("term_count", analysis.TermCount{})
@@ -46,6 +50,7 @@ func RegisterSources() {
 	RegisterMeasurement("scs", preqpp.SimplifiedClarityScore{})
 	RegisterMeasurement("sum_cqs", preqpp.SummedCollectionQuerySimilarity{})
 	RegisterMeasurement("max_cqs", preqpp.MaxCollectionQuerySimilarity{})
+	RegisterMeasurement("avg_cqs", preqpp.AverageCollectionQuerySimilarity{})
 	RegisterMeasurement("wig", postqpp.WeightedInformationGain{})
 	RegisterMeasurement("weg", postqpp.WeightedExpansionGain{})
 
