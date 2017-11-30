@@ -91,6 +91,33 @@ before using boogie.
  - `hosts`: Specify a list of Elasticsearch urls (e.g. http://example.com:9200)
  - `document_type`: Elasticsearch document type.
  - `index`: Elasticsearch index to run experiments on.
+ - `analyser`: Specify a preconfigured analyser for term vectors/analyse transformation.
+ - `analyse_field`: Specify the field to be analysed for term vectors/analyse transformation.
+
+Note: The `analyser` and `analyse_field` are to be used in the cases where you may have stemmed documents and stemmed
+queries and wish to get a term vector for a pre-stemmed term in a query. To do this, point `analyse_field` to the
+analysed field name (i.e. "keyword"). When only `analyser` is set, this defaults to normal behaviour. In this case, the
+request to the Elasticsearch term vectors API will look like this:
+
+```json
+{
+    "doc": {
+        "text": "disease"
+    },
+    "term_statistics": true,
+    "field_statistics": false,
+    "offsets": false,
+    "positions": false,
+    "payloads": false
+    "fields": ["text.keyword"],
+    "per_field_analyzer": {
+        "text.keyword": ""
+    }
+}
+```
+
+If `analyse_field` is not specified, the `fields` and `per_field_analyzer` keys will whatever `field` is set to in the
+pipeline (in the case above would be "text").
 
 #### `terrier`
 
@@ -108,6 +135,7 @@ Preprocessing is performed before analysing a query. This component accepts a li
 
  - `alphanum`: Remove non-alphanumeric characters.
  - `lowercase`: Transform uppercase characters to lowercase.
+ - `strip_numbers`: Remove numbers.
 
 ### Query Transformations (`transformations`)
 
@@ -121,6 +149,7 @@ can be specified. If the directory is not present, no queries will be output.
 The possible query transformation operations are listed as follows:
 
  - `simplify`: Simplify a Boolean query to just "and" and "or" operators.
+ - `analyse`: Use Elasticsearch to analyse the query strings in the query.
 
 Operations are applied in the order specified.
 
