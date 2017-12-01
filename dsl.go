@@ -2,13 +2,13 @@ package main
 
 // Pipeline is a representation of the DSL.
 type Pipeline struct {
-	Query           PipelineQuery            `json:"query"`
-	Statistic       PipelineStatistic        `json:"statistic"`
-	Preprocess      []string                 `json:"preprocess"`
-	Transformations PipelineTransformation   `json:"transformations"`
-	Measurements    []string                 `json:"measurements"`
-	Output          []PipelineOutput         `json:"output"`
-	Trec            PipelineTrec             `json:"trec"`
+	Query           PipelineQuery          `json:"query"`
+	Statistic       PipelineStatistic      `json:"statistic"`
+	Preprocess      []string               `json:"preprocess"`
+	Transformations PipelineTransformation `json:"transformations"`
+	Measurements    []string               `json:"measurements"`
+	Output          []PipelineOutput       `json:"output"`
+	Trec            PipelineTrec           `json:"trec"`
 }
 
 // PipelineQuery represents a query source in the DSL.
@@ -36,6 +36,7 @@ type PipelineTransformation struct {
 	Operations []string `json:"operations"`
 }
 
+// PipelineTrec represents an output for trec files.
 type PipelineTrec struct {
 	Output string `json:"output"`
 }

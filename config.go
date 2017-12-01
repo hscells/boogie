@@ -2,12 +2,12 @@ package main
 
 import (
 	"github.com/hscells/groove/analysis"
-	"github.com/hscells/groove/output"
-	"github.com/hscells/groove/query"
-	"github.com/hscells/groove/analysis/preqpp"
-	"github.com/hscells/groove/preprocess"
-	"log"
 	"github.com/hscells/groove/analysis/postqpp"
+	"github.com/hscells/groove/analysis/preqpp"
+	"github.com/hscells/groove/output"
+	"github.com/hscells/groove/preprocess"
+	"github.com/hscells/groove/query"
+	"log"
 )
 
 // RegisterSources initiates boogie with all the possible options in a pipeline.

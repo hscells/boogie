@@ -9,10 +9,10 @@ import (
 	"github.com/hscells/groove/analysis"
 	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/pipeline"
-	"io/ioutil"
-	"log"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/transmute/backend"
+	"io/ioutil"
+	"log"
 	"path/filepath"
 	"strings"
 )
@@ -27,7 +27,7 @@ type args struct {
 }
 
 func (args) Version() string {
-	return "boogie 24.Nov.2017"
+	return "boogie 1.Dec.2017"
 }
 
 func (args) Description() string {

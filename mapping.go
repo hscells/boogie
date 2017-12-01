@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/hscells/groove/analysis"
 	"github.com/hscells/groove/output"
+	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
 	"github.com/hscells/groove/stats"
-	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/transmute/pipeline"
 )
 
@@ -34,10 +34,12 @@ func RegisterPreprocessor(name string, preprocess preprocess.QueryProcessor) {
 	preprocessorMapping[name] = preprocess
 }
 
+// RegisterTransformationBoolean registers a Boolean query transformation.
 func RegisterTransformationBoolean(name string, transformation preprocess.BooleanTransformation) {
 	transformationMappingBoolean[name] = transformation
 }
 
+// RegisterTransformationElasticsearch registers an Elasticsearch transformation.
 func RegisterTransformationElasticsearch(name string, transformation preprocess.ElasticsearchTransformation) {
 	transformationMappingElasticsearch[name] = transformation
 }
@@ -52,6 +54,7 @@ func RegisterOutput(name string, formatter output.Formatter) {
 	outputMapping[name] = formatter
 }
 
+// NewKeywordQuerySource creates a "keyword query" query source.
 func NewKeywordQuerySource(options map[string]interface{}) query.QueriesSource {
 	fields := []string{"text"}
 	if optionFields, ok := options["fields"].([]interface{}); ok {
@@ -64,6 +67,7 @@ func NewKeywordQuerySource(options map[string]interface{}) query.QueriesSource {
 	return query.NewKeywordQuerySource(fields...)
 }
 
+// NewTransmuteQuerySource creates a new transmute query source for PubMed/Medline queries.
 func NewTransmuteQuerySource(p pipeline.TransmutePipeline, options map[string]interface{}) query.QueriesSource {
 	if _, ok := options["mapping"]; ok {
 		if mapping, ok := options["mapping"].(map[string][]string); ok {
@@ -118,7 +122,7 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.Elas
 	index := "index"
 	field := "text"
 	analyser := "standard"
-	analyse_field := ""
+	analyseField := ""
 
 	if hosts, ok := config["hosts"]; ok {
 		for _, host := range hosts.([]interface{}) {
@@ -164,8 +168,8 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.Elas
 		analyser = a.(string)
 	}
 
-	if a, ok := config["analyse_field"]; ok {
-		analyse_field = a.(string)
+	if a, ok := config["analyseField"]; ok {
+		analyseField = a.(string)
 	}
 
 	return stats.NewElasticsearchStatisticsSource(
@@ -175,6 +179,6 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.Elas
 		stats.ElasticsearchHosts(esHosts...),
 		stats.ElasticsearchParameters(params),
 		stats.ElasticsearchAnalyser(analyser),
-		stats.ElasticsearchAnalysedField(analyse_field),
+		stats.ElasticsearchAnalysedField(analyseField),
 		stats.ElasticsearchSearchOptions(searchOptions))
 }
