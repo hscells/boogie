@@ -29,7 +29,7 @@ func RegisterStatisticSource(name string, source stats.StatisticsSource) {
 	statisticSourceMapping[name] = source
 }
 
-// RegisterStatisticSource registers a statistic source.
+// RegisterPreprocessor registers a preprocessor.
 func RegisterPreprocessor(name string, preprocess preprocess.QueryProcessor) {
 	preprocessorMapping[name] = preprocess
 }
@@ -168,7 +168,7 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.Elas
 		analyser = a.(string)
 	}
 
-	if a, ok := config["analyseField"]; ok {
+	if a, ok := config["analyse_field"]; ok {
 		analyseField = a.(string)
 	}
 
