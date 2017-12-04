@@ -7,6 +7,7 @@ import (
 	"github.com/hscells/groove/query"
 	"github.com/hscells/groove/stats"
 	"github.com/hscells/transmute/pipeline"
+	"github.com/hscells/groove/eval"
 )
 
 var (
@@ -16,7 +17,9 @@ var (
 	transformationMappingBoolean       = map[string]preprocess.BooleanTransformation{}
 	transformationMappingElasticsearch = map[string]preprocess.ElasticsearchTransformation{}
 	measurementMapping                 = map[string]analysis.Measurement{}
-	outputMapping                      = map[string]output.Formatter{}
+	measurementFormatters              = map[string]output.MeasurementFormatter{}
+	evaluationMapping                  = map[string]eval.Evaluator{}
+	evaluationFormatters               = map[string]output.EvaluationFormatter{}
 )
 
 // RegisterQuerySource registers a query source.
@@ -49,9 +52,19 @@ func RegisterMeasurement(name string, measurement analysis.Measurement) {
 	measurementMapping[name] = measurement
 }
 
-// RegisterOutput registers an output formatter.
-func RegisterOutput(name string, formatter output.Formatter) {
-	outputMapping[name] = formatter
+// RegisterMeasurementFormatter registers an output formatter.
+func RegisterMeasurementFormatter(name string, formatter output.MeasurementFormatter) {
+	measurementFormatters[name] = formatter
+}
+
+// RegisterEvaluator registers a measurement.
+func RegisterEvaluator(name string, evaluator eval.Evaluator) {
+	evaluationMapping[name] = evaluator
+}
+
+// RegisterMeasurementFormatter registers an output formatter.
+func RegisterEvaluationFormatter(name string, formatter output.EvaluationFormatter) {
+	evaluationFormatters[name] = formatter
 }
 
 // NewKeywordQuerySource creates a "keyword query" query source.
