@@ -15,6 +15,8 @@ import (
 	"log"
 	"path/filepath"
 	"strings"
+	"github.com/hscells/groove/eval"
+	"github.com/TimothyJones/trecresults"
 )
 
 var (
@@ -78,12 +80,20 @@ func main() {
 		log.Fatal("A statistic source is required for measurements")
 	}
 
-	if len(dsl.Measurements) > 0 && len(dsl.Output) == 0 {
-		log.Fatal("At least one output format must be supplied when using measurements")
+	if len(dsl.Measurements) > 0 && len(dsl.Output.Measurements) == 0 {
+		log.Fatal("At least one output format must be supplied when using analysis measurements")
 	}
 
-	if len(dsl.Output) > 0 && len(dsl.Measurements) == 0 {
-		log.Fatal("At least one measurement must be supplied for the output formats")
+	if len(dsl.Output.Measurements) > 0 && len(dsl.Measurements) == 0 {
+		log.Fatal("At least one analysis measurement must be supplied for the output formats")
+	}
+
+	if len(dsl.Evaluations) > 0 && len(dsl.Output.Evaluations.Measurements) == 0 {
+		log.Fatal("At least one output format must be supplied when using evaluation measurements")
+	}
+
+	if len(dsl.Output.Evaluations.Measurements) > 0 && len(dsl.Evaluations) == 0 {
+		log.Fatal("At least one evaluation measurement must be supplied for the output formats")
 	}
 
 	g.Measurements = []analysis.Measurement{}
@@ -95,12 +105,40 @@ func main() {
 		}
 	}
 
-	g.OutputFormats = []output.Formatter{}
-	for _, formatter := range dsl.Output {
-		if o, ok := outputMapping[formatter.Format]; ok {
-			g.OutputFormats = append(g.OutputFormats, o)
+	g.Evaluations = []eval.Evaluator{}
+	for _, evaluationMeasurement := range dsl.Evaluations {
+		if m, ok := evaluationMapping[evaluationMeasurement.Evaluation]; ok {
+			g.Evaluations = append(g.Evaluations, m)
 		} else {
-			log.Fatalf("%v is not a known output format", formatter.Format)
+			log.Fatalf("%v is not a known evaluation measurement", evaluationMeasurement.Evaluation)
+		}
+	}
+
+	b, err = ioutil.ReadFile(dsl.Output.Evaluations.Qrels)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	qrels, err := trecresults.QrelsFromReader(bytes.NewReader(b))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	g.EvaluationQrels = qrels
+
+	g.MeasurementFormatters = []output.MeasurementFormatter{}
+	for _, formatter := range dsl.Output.Measurements {
+		if o, ok := measurementFormatters[formatter.Format]; ok {
+			g.MeasurementFormatters = append(g.MeasurementFormatters, o)
+		} else {
+			log.Fatalf("%v is not a known measurement output format", formatter.Format)
+		}
+	}
+
+	g.EvaluationFormatters = []output.EvaluationFormatter{}
+	for _, formatter := range dsl.Output.Evaluations.Measurements {
+		if o, ok := evaluationFormatters[formatter.Format]; ok {
+			g.EvaluationFormatters = append(g.EvaluationFormatters, o)
+		} else {
+			log.Fatalf("%v is not a known evaluation output format", formatter.Format)
 		}
 	}
 
@@ -125,7 +163,7 @@ func main() {
 	}
 	g.Transformations.Output = dsl.Transformations.Output
 
-	g.OutputTrec.Path = dsl.Trec.Output
+	g.OutputTrec.Path = dsl.Output.Trec.Output
 
 	// Execute the groove pipeline.
 	result, err := g.Execute(args.Queries)
@@ -133,9 +171,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Process the outputs.
-	for i, formatter := range dsl.Output {
+	// Process the measurement outputs.
+	for i, formatter := range dsl.Output.Measurements {
 		err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(result.Measurements[i]).Bytes(), 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// Process the evaluation outputs.
+	for i, formatter := range dsl.Output.Evaluations.Measurements {
+		err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(result.Evaluations[i]).Bytes(), 0644)
 		if err != nil {
 			log.Fatal(err)
 		}

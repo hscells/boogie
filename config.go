@@ -8,6 +8,7 @@ import (
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
 	"log"
+	"github.com/hscells/groove/eval"
 )
 
 // RegisterSources initiates boogie with all the possible options in a pipeline.
@@ -55,7 +56,16 @@ func RegisterSources() {
 	RegisterMeasurement("ncq", postqpp.NormalisedQueryCommitment)
 	RegisterMeasurement("clarity_score", postqpp.ClarityScore)
 
+	// Evaluations measurements.
+	RegisterEvaluator("precision", eval.PrecisionEvaluator)
+	RegisterEvaluator("recall", eval.RecallEvaluator)
+	RegisterEvaluator("num_rel", eval.NumRel)
+	RegisterEvaluator("num_ret", eval.NumRet)
+	RegisterEvaluator("num_rel_ret", eval.NumRelRet)
+
 	// Output formats.
-	RegisterOutput("json", output.JsonFormatter)
-	RegisterOutput("csv", output.CsvFormatter)
+	RegisterMeasurementFormatter("json", output.JsonMeasurementFormatter)
+	RegisterMeasurementFormatter("csv", output.CsvMeasurementFormatter)
+	RegisterEvaluationFormatter("json", output.JsonEvaluationFormatter)
+
 }
