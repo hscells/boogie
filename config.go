@@ -35,7 +35,10 @@ func RegisterSources() {
 
 	// Transformations.
 	RegisterTransformationBoolean("simplify", preprocess.Simplify)
+	RegisterTransformationBoolean("and_simplify", preprocess.AndSimplify)
+	RegisterTransformationBoolean("or_simplify", preprocess.OrSimplify)
 	RegisterTransformationElasticsearch("analyse", preprocess.Analyse)
+	RegisterTransformationElasticsearch("set_analyse", preprocess.SetAnalyseField)
 
 	// Measurement sources.
 	RegisterMeasurement("term_count", analysis.TermCount)
@@ -62,6 +65,7 @@ func RegisterSources() {
 	RegisterEvaluator("num_rel", eval.NumRel)
 	RegisterEvaluator("num_ret", eval.NumRet)
 	RegisterEvaluator("num_rel_ret", eval.NumRelRet)
+	RegisterEvaluator("distributedness", eval.Distributedness)
 
 	// Output formats.
 	RegisterMeasurementFormatter("json", output.JsonMeasurementFormatter)

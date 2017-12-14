@@ -147,8 +147,8 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.Elas
 
 	var searchOptions stats.SearchOptions
 	if search, ok := config["search"].(map[string]interface{}); ok {
-		if size, ok := search["size"].(int); ok {
-			searchOptions.Size = size
+		if size, ok := search["size"].(float64); ok {
+			searchOptions.Size = int(size)
 		} else {
 			searchOptions.Size = 1000
 		}
