@@ -130,12 +130,13 @@ func NewTerrierStatisticsSource(config map[string]interface{}) *stats.TerrierSta
 // NewElasticsearchStatisticsSource attempts to create an Elasticsearch statistics source from a configuration mapping.
 // It also tries to set some defaults for fields in case some are not specified, but they will not be sensible.
 func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.ElasticsearchStatisticsSource {
-	esHosts := []string{}
+	var esHosts []string
 	documentType := "doc"
 	index := "index"
 	field := "text"
 	analyser := "standard"
 	analyseField := ""
+	scroll := false
 
 	if hosts, ok := config["hosts"]; ok {
 		for _, host := range hosts.([]interface{}) {
@@ -185,6 +186,10 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.Elas
 		analyseField = a.(string)
 	}
 
+	if s, ok := config["scroll"]; ok {
+		scroll = s.(bool)
+	}
+
 	return stats.NewElasticsearchStatisticsSource(
 		stats.ElasticsearchDocumentType(documentType),
 		stats.ElasticsearchIndex(index),
@@ -193,5 +198,6 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.Elas
 		stats.ElasticsearchParameters(params),
 		stats.ElasticsearchAnalyser(analyser),
 		stats.ElasticsearchAnalysedField(analyseField),
-		stats.ElasticsearchSearchOptions(searchOptions))
+		stats.ElasticsearchSearchOptions(searchOptions),
+		stats.ElasticsearchScroll(scroll))
 }

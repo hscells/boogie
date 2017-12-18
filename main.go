@@ -14,9 +14,11 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
-	"strings"
 	"github.com/hscells/groove/eval"
 	"github.com/TimothyJones/trecresults"
+	"github.com/hscells/groove"
+	"os"
+	"strings"
 )
 
 var (
@@ -29,7 +31,7 @@ type args struct {
 }
 
 func (args) Version() string {
-	return "boogie 1.Dec.2017"
+	return "boogie 18.Dec.2017"
 }
 
 func (args) Description() string {
@@ -114,15 +116,17 @@ func main() {
 		}
 	}
 
-	b, err = ioutil.ReadFile(dsl.Output.Evaluations.Qrels)
-	if err != nil {
-		log.Fatalln(err)
+	if len(dsl.Output.Evaluations.Qrels) > 0 {
+		b, err = ioutil.ReadFile(dsl.Output.Evaluations.Qrels)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		qrels, err := trecresults.QrelsFromReader(bytes.NewReader(b))
+		if err != nil {
+			log.Fatalln(err)
+		}
+		g.EvaluationQrels = qrels
 	}
-	qrels, err := trecresults.QrelsFromReader(bytes.NewReader(b))
-	if err != nil {
-		log.Fatalln(err)
-	}
-	g.EvaluationQrels = qrels
 
 	g.MeasurementFormatters = []output.MeasurementFormatter{}
 	for _, formatter := range dsl.Output.Measurements {
@@ -161,49 +165,80 @@ func main() {
 			log.Fatalf("%v is not a known transformation", t)
 		}
 	}
-	g.Transformations.Output = dsl.Transformations.Output
 
+	g.Transformations.Output = dsl.Transformations.Output
 	g.OutputTrec.Path = dsl.Output.Trec.Output
 
-	// Execute the groove pipeline.
-	result, err := g.Execute(args.Queries)
-	if err != nil {
-		log.Fatal(err)
+	// Execute the groove pipeline. This is done in a go routine, and the results are sent back through the channel.
+	pipelineChannel := make(chan groove.PipelineResult)
+	go g.Execute(args.Queries, pipelineChannel)
+
+	evaluations := make([]string, len(dsl.Evaluations))
+
+	var trecEvalFile *os.File
+	if len(dsl.Output.Trec.Output) > 0 {
+		trecEvalFile, err = os.OpenFile(dsl.Output.Trec.Output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		trecEvalFile.Truncate(0)
+		trecEvalFile.Seek(0, 0)
+		defer trecEvalFile.Close()
 	}
 
-	// Process the measurement outputs.
-	for i, formatter := range dsl.Output.Measurements {
-		err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(result.Measurements[i]).Bytes(), 0644)
-		if err != nil {
-			log.Fatal(err)
+	for {
+		result := <-pipelineChannel
+		if result.Type == groove.Done {
+			break
+		}
+		switch result.Type {
+		case groove.Measurement:
+			// Process the measurement outputs.
+			for i, formatter := range dsl.Output.Measurements {
+				err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(result.Measurements[i]).Bytes(), 0644)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		case groove.Transformation:
+			// Output the transformed queries
+			if len(dsl.Transformations.Output) > 0 {
+				for _, queryResult := range result.Transformations {
+					q := bytes.NewBufferString(backend.NewCQRQuery(queryResult.Transformation).StringPretty()).Bytes()
+					err := ioutil.WriteFile(filepath.Join(g.Transformations.Output, queryResult.Name), q, 0644)
+					if err != nil {
+						log.Fatal(err)
+					}
+				}
+			}
+		case groove.Evaluation:
+			for i, e := range result.Evaluations {
+				evaluations[i] = e
+			}
+		case groove.TrecResult:
+			if result.TrecResults != nil && len(*result.TrecResults) > 0 {
+				l := make([]string, len(*result.TrecResults))
+				for i, r := range *result.TrecResults {
+					l[i] = r.String()
+				}
+				trecEvalFile.Write([]byte(strings.Join(l, "\n") + "\n"))
+			}
+		case groove.Error:
+			if result.Topic > 0 {
+				log.Printf("an error occurred in topic %v", result.Topic)
+			} else {
+				log.Println("an error occurred")
+			}
+			log.Fatalln(result.Error)
+			return
 		}
 	}
 
 	// Process the evaluation outputs.
 	for i, formatter := range dsl.Output.Evaluations.Measurements {
-		err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(result.Evaluations[i]).Bytes(), 0644)
+		err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(evaluations[i]).Bytes(), 0644)
 		if err != nil {
 			log.Fatal(err)
 		}
-	}
-
-	// Output the transformed queries
-	if len(dsl.Transformations.Output) > 0 {
-		for _, queryResult := range result.Transformations {
-			q := bytes.NewBufferString(backend.NewCQRQuery(queryResult.Transformation).StringPretty()).Bytes()
-			err := ioutil.WriteFile(filepath.Join(g.Transformations.Output, queryResult.Name), q, 0644)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
-
-	// Output the trec results, if specified.
-	if result.TrecResults != nil && len(*result.TrecResults) > 0 {
-		l := make([]string, len(*result.TrecResults))
-		for i, r := range *result.TrecResults {
-			l[i] = r.String()
-		}
-		ioutil.WriteFile(g.OutputTrec.Path, []byte(strings.Join(l, "\n")), 0644)
 	}
 }

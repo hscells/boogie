@@ -37,6 +37,7 @@ func RegisterSources() {
 	RegisterTransformationBoolean("simplify", preprocess.Simplify)
 	RegisterTransformationBoolean("and_simplify", preprocess.AndSimplify)
 	RegisterTransformationBoolean("or_simplify", preprocess.OrSimplify)
+	RegisterTransformationBoolean("rct_filter", preprocess.RCTFilter)
 	RegisterTransformationElasticsearch("analyse", preprocess.Analyse)
 	RegisterTransformationElasticsearch("set_analyse", preprocess.SetAnalyseField)
 
