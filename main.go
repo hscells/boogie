@@ -197,17 +197,21 @@ func main() {
 			for i, formatter := range dsl.Output.Measurements {
 				err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(result.Measurements[i]).Bytes(), 0644)
 				if err != nil {
-					log.Fatal(err)
+					log.Fatalln(err)
 				}
 			}
 		case groove.Transformation:
 			// Output the transformed queries
 			if len(dsl.Transformations.Output) > 0 {
 				for _, queryResult := range result.Transformations {
-					q := bytes.NewBufferString(backend.NewCQRQuery(queryResult.Transformation).StringPretty()).Bytes()
-					err := ioutil.WriteFile(filepath.Join(g.Transformations.Output, queryResult.Name), q, 0644)
+					s, err := backend.NewCQRQuery(queryResult.Transformation).StringPretty()
 					if err != nil {
-						log.Fatal(err)
+						log.Fatalln(err)
+					}
+					q := bytes.NewBufferString(s).Bytes()
+					err = ioutil.WriteFile(filepath.Join(g.Transformations.Output, queryResult.Name), q, 0644)
+					if err != nil {
+						log.Fatalln(err)
 					}
 				}
 			}
