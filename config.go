@@ -9,6 +9,7 @@ import (
 	"github.com/hscells/groove/query"
 	"log"
 	"github.com/hscells/groove/eval"
+	"github.com/hscells/groove/rewrite"
 )
 
 // RegisterSources initiates boogie with all the possible options in a pipeline.
@@ -73,4 +74,13 @@ func RegisterSources() {
 	RegisterMeasurementFormatter("csv", output.CsvMeasurementFormatter)
 	RegisterEvaluationFormatter("json", output.JsonEvaluationFormatter)
 
+	// Rewrite.
+	// Query Chain Candidate Selectors.
+	RegisterQueryChainCandidateSelector("oracle", NewOracleQueryChainCandidateSelector(dsl.Statistic.Source, dsl.Output.Evaluations.Qrels))
+
+	// Rewrite Transformations.
+	RegisterRewriteTransformation("logical_operator", rewrite.LogicalOperatorReplacement)
+	RegisterRewriteTransformation("adj_range", rewrite.AdjacencyRange)
+	RegisterRewriteTransformation("mesh_explosion", rewrite.MeSHExplosion)
+	RegisterRewriteTransformation("field_restrictions", rewrite.FieldRestrictions)
 }

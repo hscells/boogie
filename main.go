@@ -19,6 +19,7 @@ import (
 	"github.com/hscells/groove"
 	"os"
 	"strings"
+	"github.com/hscells/groove/rewrite"
 )
 
 var (
@@ -162,8 +163,27 @@ func main() {
 		} else if transformation, ok := transformationMappingElasticsearch[t]; ok {
 			g.Transformations.ElasticsearchTransformations = append(g.Transformations.ElasticsearchTransformations, transformation)
 		} else {
-			log.Fatalf("%v is not a known transformation", t)
+			log.Fatalf("%v is not a known preprocessing transformation", t)
 		}
+	}
+
+	g.QueryChain = &rewrite.QueryChain{}
+	if len(dsl.Rewrite.Chain) > 0 && len(dsl.Rewrite.Transformations) > 0 {
+		var transformations []rewrite.Transformation
+		for _, transformation := range dsl.Rewrite.Transformations {
+			if t, ok := rewriteTransformationMapping[transformation]; ok {
+				transformations = append(transformations, t)
+			} else {
+				log.Fatalf("%v is not a known rewrite transformation", transformation)
+			}
+		}
+
+		if qc, ok := queryChainCandidateSelectorMapping[dsl.Rewrite.Chain]; ok {
+			g.QueryChain = rewrite.NewQueryChain(qc, transformations...)
+		} else {
+			log.Fatalf("%v is not a known query chain candidate selector", dsl.Rewrite.Chain)
+		}
+
 	}
 
 	g.Transformations.Output = dsl.Transformations.Output

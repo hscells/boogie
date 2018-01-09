@@ -8,7 +8,14 @@ type Pipeline struct {
 	Measurements    []string               `json:"measurements"`
 	Evaluations     []PipelineEvaluation   `json:"evaluation"`
 	Transformations PipelineTransformation `json:"transformations"`
+	Rewrite         PipelineRewrite        `json:"rewrite"`
 	Output          PipelineOutput         `json:"output"`
+}
+
+// PipelineRewrite represents a rewrite of queries.
+type PipelineRewrite struct {
+	Transformations []string `json:"transformations"`
+	Chain           string   `json:"chain"`
 }
 
 // PipelineQuery represents a query source in the DSL.

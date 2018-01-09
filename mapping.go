@@ -8,6 +8,11 @@ import (
 	"github.com/hscells/groove/stats"
 	"github.com/hscells/transmute/pipeline"
 	"github.com/hscells/groove/eval"
+	"github.com/hscells/groove/rewrite"
+	"io/ioutil"
+	"github.com/TimothyJones/trecresults"
+	"bytes"
+	"log"
 )
 
 var (
@@ -20,6 +25,8 @@ var (
 	measurementFormatters              = map[string]output.MeasurementFormatter{}
 	evaluationMapping                  = map[string]eval.Evaluator{}
 	evaluationFormatters               = map[string]output.EvaluationFormatter{}
+	rewriteTransformationMapping       = map[string]rewrite.Transformation{}
+	queryChainCandidateSelectorMapping = map[string]rewrite.QueryChainCandidateSelector{}
 )
 
 // RegisterQuerySource registers a query source.
@@ -65,6 +72,34 @@ func RegisterEvaluator(name string, evaluator eval.Evaluator) {
 // RegisterMeasurementFormatter registers an output formatter.
 func RegisterEvaluationFormatter(name string, formatter output.EvaluationFormatter) {
 	evaluationFormatters[name] = formatter
+}
+
+// RegisterRewriteTransformation registers a rewrite transformation.
+func RegisterRewriteTransformation(name string, transformation rewrite.Transformation) {
+	rewriteTransformationMapping[name] = transformation
+}
+
+// RegisterRewriteTransformation registers a query chain candidate selector.
+func RegisterQueryChainCandidateSelector(name string, selector rewrite.QueryChainCandidateSelector) {
+	queryChainCandidateSelectorMapping[name] = selector
+}
+
+func NewOracleQueryChainCandidateSelector(source string, qrels string) *rewrite.OracleQueryChainCandidateSelector {
+	b, err := ioutil.ReadFile(qrels)
+	if err != nil {
+		log.Fatal(err)
+	}
+	q, err := trecresults.QrelsFromReader(bytes.NewReader(b))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if ss, ok := statisticSourceMapping[source]; ok {
+		return rewrite.NewOracleQueryChainCandidateSelector(ss, q)
+	}
+
+	log.Fatal("could not create oracle query chain candidate selector")
+	return nil
 }
 
 // NewKeywordQuerySource creates a "keyword query" query source.
