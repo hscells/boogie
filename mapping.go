@@ -95,7 +95,7 @@ func NewOracleQueryChainCandidateSelector(source string, qrels string) *rewrite.
 	}
 
 	if ss, ok := statisticSourceMapping[source]; ok {
-		return rewrite.NewOracleQueryChainCandidateSelector(ss, q)
+		return rewrite.NewOracleQueryChainCandidateSelector(ss, &q)
 	}
 
 	log.Fatal("could not create oracle query chain candidate selector")

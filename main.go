@@ -167,7 +167,7 @@ func main() {
 		}
 	}
 
-	g.QueryChain = &rewrite.QueryChain{}
+	//g.QueryChain
 	if len(dsl.Rewrite.Chain) > 0 && len(dsl.Rewrite.Transformations) > 0 {
 		var transformations []rewrite.Transformation
 		for _, transformation := range dsl.Rewrite.Transformations {
