@@ -16,6 +16,16 @@ type Pipeline struct {
 type PipelineRewrite struct {
 	Transformations []string `json:"transformations"`
 	Chain           string   `json:"chain"`
+
+	SVM PipelineQueryChainSVM `json:"svm"`
+}
+
+// PipelineQueryChainSVM represents a query chain that uses an SVM.
+type PipelineQueryChainSVM struct {
+	Features      string `json:"features"`
+	Model         string `json:"model"`
+	ShouldTrain   bool   `json:"train?"`
+	ShouldExtract bool   `json:"extract?"`
 }
 
 // PipelineQuery represents a query source in the DSL.
@@ -55,6 +65,7 @@ type EvaluationOutput struct {
 	Measurements []EvaluationOutputFormat `json:"formats"`
 }
 
+// EvaluationOutputFormat represents how evaluations should be output.
 type EvaluationOutputFormat struct {
 	Format   string `json:"format"`
 	Filename string `json:"filename"`

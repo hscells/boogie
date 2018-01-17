@@ -32,34 +32,43 @@ type args struct {
 }
 
 func (args) Version() string {
-	return "boogie 18.Dec.2017"
+	return "boogie 17.Jan.2018"
 }
 
 func (args) Description() string {
 	return `DSL front-end for groove.
- For further documentation see https://godoc.org/github.com/hscells/boogie.
+For further documentation see https://godoc.org/github.com/hscells/boogie.
 To view the source or to contribute see https://github.com/hscells/boogie.
 
 For information about groove, see https://github.com/hscells/groove.`
 }
 
-func main() {
-	// Parse the command line arguments.
-	var args args
-	arg.MustParse(&args)
-
-	// Read the contents of the dsl file.
-	b, err := ioutil.ReadFile(args.Pipeline)
-	if err != nil {
-		log.Fatal(err)
+// CreateQueryChainSVM creates a sub-pipeline which can train an SVM for query chains.
+func CreateQueryChainSVM(dsl Pipeline, g pipeline.GroovePipeline) (qc *pipeline.QueryChainSVM) {
+	var ok bool
+	if qc.Selector, ok = g.QueryChain.CandidateSelector.(rewrite.OracleQueryChainCandidateSelector); !ok {
+		log.Fatalf("oracle must be used to extract features for svm, got %v", dsl.Rewrite.Chain)
 	}
 
-	// Parse the dsl file into a struct.
-	err = json.Unmarshal(b, &dsl)
-	if err != nil {
-		log.Fatal(err)
+	qc.Transformations = g.QueryChain.Transformations
+	qc.Features = dsl.Rewrite.SVM.Features
+	qc.Model = dsl.Rewrite.SVM.Model
+	qc.ShouldTrain = dsl.Rewrite.SVM.ShouldTrain
+	qc.ShouldExtract = dsl.Rewrite.SVM.ShouldExtract
+
+	if qc.ShouldExtract && len(qc.Features) == 0 {
+		log.Fatal("a feature file must be specified when extracting features for a query chain SVM")
 	}
 
+	if qc.ShouldTrain && len(qc.Model) == 0 {
+		log.Fatal("a model file must be specified when training an SVM for query chains")
+	}
+
+	return
+}
+
+// CreatePipeline creates the main groove pipeline.
+func CreatePipeline(dsl Pipeline) pipeline.GroovePipeline {
 	// Register the sources used in the groove pipeline.
 	RegisterSources()
 
@@ -118,7 +127,7 @@ func main() {
 	}
 
 	if len(dsl.Output.Evaluations.Qrels) > 0 {
-		b, err = ioutil.ReadFile(dsl.Output.Evaluations.Qrels)
+		b, err := ioutil.ReadFile(dsl.Output.Evaluations.Qrels)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -188,6 +197,29 @@ func main() {
 
 	g.Transformations.Output = dsl.Transformations.Output
 	g.OutputTrec.Path = dsl.Output.Trec.Output
+	return g
+}
+
+func main() {
+	// Parse the command line arguments.
+	var args args
+	arg.MustParse(&args)
+
+	// Read the contents of the dsl file.
+	b, err := ioutil.ReadFile(args.Pipeline)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Parse the dsl file into a struct.
+	err = json.Unmarshal(b, &dsl)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create the main pipeline.
+	g := CreatePipeline(dsl)
+	qc := CreateQueryChainSVM(dsl, g)
 
 	// Execute the groove pipeline. This is done in a go routine, and the results are sent back through the channel.
 	pipelineChannel := make(chan groove.PipelineResult)
@@ -224,6 +256,11 @@ func main() {
 			// Output the transformed queries
 			if len(dsl.Transformations.Output) > 0 {
 				for _, queryResult := range result.Transformations {
+
+					if (qc.ShouldExtract || qc.ShouldTrain) && qc.Transformations != nil {
+						qc.AppendQuery(queryResult.ToGroovePipelineQuery())
+					}
+
 					s, err := backend.NewCQRQuery(queryResult.Transformation).StringPretty()
 					if err != nil {
 						log.Fatalln(err)
@@ -265,4 +302,26 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+
+	// ------------Run any other sub-pipelines------------
+	// Extracting features.
+	if qc.ShouldExtract && len(qc.Queries) > 0 {
+		f, err := os.OpenFile(qc.Features, os.O_WRONLY|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, err = qc.WriteFeatures(f)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// Training a model.
+	if qc.ShouldTrain && len(qc.Queries) > 0 {
+		err := qc.TrainModel()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 }
