@@ -83,4 +83,5 @@ func RegisterSources() {
 	RegisterRewriteTransformation("adj_range", rewrite.AdjacencyRange)
 	RegisterRewriteTransformation("mesh_explosion", rewrite.MeSHExplosion)
 	RegisterRewriteTransformation("field_restrictions", rewrite.FieldRestrictions)
+	RegisterRewriteTransformation("adj_replacement", rewrite.AdjacencyReplacement)
 }

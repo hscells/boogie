@@ -20,6 +20,7 @@ import (
 	"os"
 	"strings"
 	"github.com/hscells/groove/rewrite"
+	"io"
 )
 
 var (
@@ -29,6 +30,7 @@ var (
 type args struct {
 	Queries  string `arg:"help:Path to queries.,required"`
 	Pipeline string `arg:"help:Path to boogie pipeline.,required"`
+	LogFile  string `arg:"help:File to output logs to."`
 }
 
 func (args) Version() string {
@@ -205,6 +207,17 @@ func main() {
 	var args args
 	arg.MustParse(&args)
 
+	if len(args.LogFile) > 0 {
+		f, err := os.OpenFile(args.LogFile, os.O_CREATE|os.O_WRONLY, 0644)
+		defer f.Close()
+		f.Truncate(0)
+		if err != nil {
+			log.Fatal(err)
+		}
+		mw := io.MultiWriter(os.Stdout, f)
+		log.SetOutput(mw)
+	}
+
 	// Read the contents of the dsl file.
 	b, err := ioutil.ReadFile(args.Pipeline)
 	if err != nil {
@@ -219,7 +232,10 @@ func main() {
 
 	// Create the main pipeline.
 	g := CreatePipeline(dsl)
-	qc := CreateQueryChainSVM(dsl, g)
+	var qc *pipeline.QueryChainSVM
+	if dsl.Rewrite.SVM != (PipelineQueryChainSVM{}) {
+		qc = CreateQueryChainSVM(dsl, g)
+	}
 
 	// Execute the groove pipeline. This is done in a go routine, and the results are sent back through the channel.
 	pipelineChannel := make(chan groove.PipelineResult)
@@ -283,6 +299,7 @@ func main() {
 					l[i] = r.String()
 				}
 				trecEvalFile.Write([]byte(strings.Join(l, "\n") + "\n"))
+				result.TrecResults = nil
 			}
 		case groove.Error:
 			if result.Topic > 0 {

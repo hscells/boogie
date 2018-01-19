@@ -14,10 +14,9 @@ type Pipeline struct {
 
 // PipelineRewrite represents a rewrite of queries.
 type PipelineRewrite struct {
-	Transformations []string `json:"transformations"`
-	Chain           string   `json:"chain"`
-
-	SVM PipelineQueryChainSVM `json:"svm"`
+	Transformations []string              `json:"transformations"`
+	Chain           string                `json:"chain"`
+	SVM             PipelineQueryChainSVM `json:"svm"`
 }
 
 // PipelineQueryChainSVM represents a query chain that uses an SVM.

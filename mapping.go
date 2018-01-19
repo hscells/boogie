@@ -84,7 +84,7 @@ func RegisterQueryChainCandidateSelector(name string, selector rewrite.QueryChai
 	queryChainCandidateSelectorMapping[name] = selector
 }
 
-func NewOracleQueryChainCandidateSelector(source string, qrels string) *rewrite.OracleQueryChainCandidateSelector {
+func NewOracleQueryChainCandidateSelector(source string, qrels string) rewrite.OracleQueryChainCandidateSelector {
 	b, err := ioutil.ReadFile(qrels)
 	if err != nil {
 		log.Fatal(err)
@@ -95,11 +95,11 @@ func NewOracleQueryChainCandidateSelector(source string, qrels string) *rewrite.
 	}
 
 	if ss, ok := statisticSourceMapping[source]; ok {
-		return rewrite.NewOracleQueryChainCandidateSelector(ss, &q)
+		return rewrite.NewOracleQueryChainCandidateSelector(ss, q)
 	}
 
 	log.Fatal("could not create oracle query chain candidate selector")
-	return nil
+	return rewrite.OracleQueryChainCandidateSelector{}
 }
 
 // NewKeywordQuerySource creates a "keyword query" query source.
