@@ -271,21 +271,18 @@ func main() {
 		case groove.Transformation:
 			// Output the transformed queries
 			if len(dsl.Transformations.Output) > 0 {
-				for _, queryResult := range result.Transformations {
+				if qc != nil && (qc.ShouldExtract || qc.ShouldTrain) && qc.Transformations != nil {
+					qc.AppendQuery(result.Transformation.ToGroovePipelineQuery())
+				}
 
-					if (qc.ShouldExtract || qc.ShouldTrain) && qc.Transformations != nil {
-						qc.AppendQuery(queryResult.ToGroovePipelineQuery())
-					}
-
-					s, err := backend.NewCQRQuery(queryResult.Transformation).StringPretty()
-					if err != nil {
-						log.Fatalln(err)
-					}
-					q := bytes.NewBufferString(s).Bytes()
-					err = ioutil.WriteFile(filepath.Join(g.Transformations.Output, queryResult.Name), q, 0644)
-					if err != nil {
-						log.Fatalln(err)
-					}
+				s, err := backend.NewCQRQuery(result.Transformation.Transformation).StringPretty()
+				if err != nil {
+					log.Fatalln(err)
+				}
+				q := bytes.NewBufferString(s).Bytes()
+				err = ioutil.WriteFile(filepath.Join(g.Transformations.Output, result.Transformation.Name), q, 0644)
+				if err != nil {
+					log.Fatalln(err)
 				}
 			}
 		case groove.Evaluation:
@@ -322,7 +319,7 @@ func main() {
 
 	// ------------Run any other sub-pipelines------------
 	// Extracting features.
-	if qc.ShouldExtract && len(qc.Queries) > 0 {
+	if qc != nil && qc.ShouldExtract && len(qc.Queries) > 0 {
 		f, err := os.OpenFile(qc.Features, os.O_WRONLY|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Fatal(err)
@@ -334,7 +331,7 @@ func main() {
 	}
 
 	// Training a model.
-	if qc.ShouldTrain && len(qc.Queries) > 0 {
+	if qc != nil && qc.ShouldTrain && len(qc.Queries) > 0 {
 		err := qc.TrainModel()
 		if err != nil {
 			log.Fatal(err)
