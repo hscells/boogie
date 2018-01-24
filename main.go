@@ -45,30 +45,6 @@ To view the source or to contribute see https://github.com/hscells/boogie.
 For information about groove, see https://github.com/hscells/groove.`
 }
 
-// CreateQueryChainSVM creates a sub-pipeline which can train an SVM for query chains.
-func CreateQueryChainSVM(dsl Pipeline, g pipeline.GroovePipeline) (qc *pipeline.QueryChainSVM) {
-	var ok bool
-	if qc.Selector, ok = g.QueryChain.CandidateSelector.(rewrite.OracleQueryChainCandidateSelector); !ok {
-		log.Fatalf("oracle must be used to extract features for svm, got %v", dsl.Rewrite.Chain)
-	}
-
-	qc.Transformations = g.QueryChain.Transformations
-	qc.Features = dsl.Rewrite.SVM.Features
-	qc.Model = dsl.Rewrite.SVM.Model
-	qc.ShouldTrain = dsl.Rewrite.SVM.ShouldTrain
-	qc.ShouldExtract = dsl.Rewrite.SVM.ShouldExtract
-
-	if qc.ShouldExtract && len(qc.Features) == 0 {
-		log.Fatal("a feature file must be specified when extracting features for a query chain SVM")
-	}
-
-	if qc.ShouldTrain && len(qc.Model) == 0 {
-		log.Fatal("a model file must be specified when training an SVM for query chains")
-	}
-
-	return
-}
-
 // CreatePipeline creates the main groove pipeline.
 func CreatePipeline(dsl Pipeline) pipeline.GroovePipeline {
 	// Register the sources used in the groove pipeline.
@@ -232,10 +208,6 @@ func main() {
 
 	// Create the main pipeline.
 	g := CreatePipeline(dsl)
-	var qc *pipeline.QueryChainSVM
-	if dsl.Rewrite.SVM != (PipelineQueryChainSVM{}) {
-		qc = CreateQueryChainSVM(dsl, g)
-	}
 
 	// Execute the groove pipeline. This is done in a go routine, and the results are sent back through the channel.
 	pipelineChannel := make(chan groove.PipelineResult)
@@ -271,10 +243,6 @@ func main() {
 		case groove.Transformation:
 			// Output the transformed queries
 			if len(dsl.Transformations.Output) > 0 {
-				if qc != nil && (qc.ShouldExtract || qc.ShouldTrain) && qc.Transformations != nil {
-					qc.AppendQuery(result.Transformation.ToGroovePipelineQuery())
-				}
-
 				s, err := backend.NewCQRQuery(result.Transformation.Transformation).StringPretty()
 				if err != nil {
 					log.Fatalln(err)
@@ -316,26 +284,4 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-
-	// ------------Run any other sub-pipelines------------
-	// Extracting features.
-	if qc != nil && qc.ShouldExtract && len(qc.Queries) > 0 {
-		f, err := os.OpenFile(qc.Features, os.O_WRONLY|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Fatal(err)
-		}
-		_, err = qc.WriteFeatures(f)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// Training a model.
-	if qc != nil && qc.ShouldTrain && len(qc.Queries) > 0 {
-		err := qc.TrainModel()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
 }

@@ -21,10 +21,7 @@ type PipelineRewrite struct {
 
 // PipelineQueryChainSVM represents a query chain that uses an SVM.
 type PipelineQueryChainSVM struct {
-	Features      string `json:"features"`
-	Model         string `json:"model"`
-	ShouldTrain   bool   `json:"train?"`
-	ShouldExtract bool   `json:"extract?"`
+	Model string `json:"model"`
 }
 
 // PipelineQuery represents a query source in the DSL.
