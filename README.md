@@ -20,10 +20,10 @@ how you choose to store your documents from how you get your experiments done. b
 
 ## Installation
 
-boogie can be installed with `go get`.
+boogie can be installed with `go install`.
 
 ```bash
-go get -u github.com/hscells/boogie
+go install github.com/hscells/boogie
 ```
 
 ## Usage
@@ -36,8 +36,9 @@ command line usage:
 boogie --queries ./medline --pipeline pipeline.json
 ```
 
- - `--queries` is the path to a directory of queries that will be analysed by groove.
- - `--pipeline` is the path to a boogie pipeline file which will be used to construct a groove pipeline.
+ - `--queries`;  the path to a directory of queries that will be analysed by groove.
+ - `--pipeline`; the path to a boogie pipeline file which will be used to construct a groove pipeline.
+ - `--logfile` (optional); the path to a logfile to output logs to.
 
 ## DSL
 
@@ -162,6 +163,10 @@ The possible query transformation operations are listed as follows:
  - `simplify`: Simplify a Boolean query to just "and" and "or" operators.
  - `analyse`: Use Elasticsearch to analyse the query strings in the query.
 
+Additionally, the following transformation can be used in conjunction with the Elasticsearch statistics source:
+
+ - `analyse`: Run the analyser specified in `statistic` on the query.
+
 Operations are applied in the order specified.
 
 ### Measurements (`measurements`)
@@ -169,6 +174,9 @@ Operations are applied in the order specified.
 Measurements are methods that apply a calculation to a query using a statistics source. All measurements return a
 floating point number. This component accepts a list of preprocessors:
 
+ - `term_count` - Total number of query terms.
+ - `keyword_count` - Total number of keywords used in a Boolean query.
+ - `boolean_query_count` - Total number of clauses in a Boolean query.
  - `avg_ictf` - Average inverse collection term frequency.
  - `avg_idf` - Average inverse document frequency.
  - `sum_idf` - Sum inverse document frequency.
@@ -180,15 +188,46 @@ floating point number. This component accepts a list of preprocessors:
  - `query_scope` - Query Scope.
  - `wig` - Weighted Information Gain.
  - `weg` - Weighted Entropy Gain.
+ - `ncq` - Normalised Query Commitment.
+ - `clarity_score` - Clarity Score.
+
+### Evaluation (`evaluation`)
+
+Queries can be evaluated through different measures. To evaluate queries in the pipeline, use the `evaluation` key. Each
+evaluation measurement comprises:
+
+ - `evaluate`: The measure to evaluate each topic with.
+
+The list of measures are as follows:
+
+ - `num_ret`: Total number of retrieved documents.
+ - `num_rel`: Total number of relevant documents (from qrels).
+ - `num_rel_ret`: Total number of relevant documents that were retrieved.
+ - `precision`: Ratio of relevant retrieved documents to retrieved documents.
+ - `recall`: Ratio of relevant retrieved documents to relevant documents.
 
 ### Output (`output`)
 
 An output specifies how experiments are to be formatted and what file to write them to. The `output` component comprises
-a list of outputs. Each output contains a `format` field and a `filename` field. The `filename` field tells the pipeline
+a list of outputs. Each output can either of type `measurements`, `trec_results`, or `evaluations`.
+
+For `measurements`, each item contains a `format` field and a `filename` field. The `filename` field tells the pipeline
 where to write the file, and the `format` is the format of the file. The formats are described below.
 
  - `json`: JSON formatting.
  - `csv`: Comma separated formatting.
+
+For `trec_results`, a filename must be specified using `output`:
+
+ - `output`: Where to write trec-style results file to.
+
+For `evaluations`, both the `qrels` file must be specified, and a list of formats similar to `measurements`; i.e.
+a list of filename and format pairs:
+
+ - `qrels`: Path to a trec-style qrels file.
+ - `formats`: `format`, `filename` pairs.
+
+The format of `evaluations` is currently only `json`.
 
 ### Trec Results (`trec`)
 

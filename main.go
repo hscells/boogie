@@ -5,22 +5,22 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/TimothyJones/trecresults"
 	"github.com/alexflint/go-arg"
+	"github.com/hscells/groove"
 	"github.com/hscells/groove/analysis"
+	"github.com/hscells/groove/eval"
 	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/pipeline"
 	"github.com/hscells/groove/preprocess"
+	"github.com/hscells/groove/rewrite"
 	"github.com/hscells/transmute/backend"
+	"io"
 	"io/ioutil"
 	"log"
-	"path/filepath"
-	"github.com/hscells/groove/eval"
-	"github.com/TimothyJones/trecresults"
-	"github.com/hscells/groove"
 	"os"
+	"path/filepath"
 	"strings"
-	"github.com/hscells/groove/rewrite"
-	"io"
 )
 
 var (
@@ -34,7 +34,7 @@ type args struct {
 }
 
 func (args) Version() string {
-	return "boogie 17.Jan.2018"
+	return "boogie 1.Feb.2018"
 }
 
 func (args) Description() string {

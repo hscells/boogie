@@ -1,17 +1,17 @@
 package main
 
 import (
+	"bytes"
+	"github.com/TimothyJones/trecresults"
 	"github.com/hscells/groove/analysis"
+	"github.com/hscells/groove/eval"
 	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
+	"github.com/hscells/groove/rewrite"
 	"github.com/hscells/groove/stats"
 	"github.com/hscells/transmute/pipeline"
-	"github.com/hscells/groove/eval"
-	"github.com/hscells/groove/rewrite"
 	"io/ioutil"
-	"github.com/TimothyJones/trecresults"
-	"bytes"
 	"log"
 )
 
@@ -69,7 +69,7 @@ func RegisterEvaluator(name string, evaluator eval.Evaluator) {
 	evaluationMapping[name] = evaluator
 }
 
-// RegisterMeasurementFormatter registers an output formatter.
+// RegisterEvaluationFormatter registers an output formatter.
 func RegisterEvaluationFormatter(name string, formatter output.EvaluationFormatter) {
 	evaluationFormatters[name] = formatter
 }
@@ -79,11 +79,12 @@ func RegisterRewriteTransformation(name string, transformation rewrite.Transform
 	rewriteTransformationMapping[name] = transformation
 }
 
-// RegisterRewriteTransformation registers a query chain candidate selector.
+// RegisterQueryChainCandidateSelector registers a query chain candidate selector.
 func RegisterQueryChainCandidateSelector(name string, selector rewrite.QueryChainCandidateSelector) {
 	queryChainCandidateSelectorMapping[name] = selector
 }
 
+// NewOracleQueryChainCandidateSelector creates a new oracle query chain candidate selector.
 func NewOracleQueryChainCandidateSelector(source string, qrels string) rewrite.OracleQueryChainCandidateSelector {
 	b, err := ioutil.ReadFile(qrels)
 	if err != nil {

@@ -55,7 +55,7 @@ type MeasurementOutput struct {
 	Filename string `json:"filename"`
 }
 
-// MeasurementOutput represents an output format for measurements.
+// EvaluationOutput represents an output format for measurements.
 type EvaluationOutput struct {
 	Qrels        string                   `json:"qrels"`
 	Measurements []EvaluationOutputFormat `json:"formats"`
