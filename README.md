@@ -102,7 +102,7 @@ Query formats are specified using the `format`, the different query formats and 
 
 The options for the `pubmed` format are the same as `medline`.
 
-### `keyword`
+#### `keyword`
 
 A keyword query (just one string of characters per file). No additional options may be specified.
 
