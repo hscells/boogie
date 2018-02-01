@@ -14,9 +14,9 @@ of queries, the source for statistics, the operations and measurements for each 
 output. boogie translates a simple DSL syntax into a [groove](https://github.com/hscells/groove) pipeline. Both groove
 and boogie are designed to be easily extendable and offer sane, simple abstractions.
 
-The most important abstraction is the statistic source. A boogie pipeline does not worry itself with how documents are
-stored or the structure of your index; only how to access the source of documents. In this way, boogie separates
-how you choose to store your documents from how you get your experiments done. boogie down.
+The most important abstraction is the statistic source. A boogie pipeline is not concerned with how documents are
+stored or the structure of the index; only how to retrieve documents. In this way, boogie separates
+how you choose to store your documents from how you get your experiments done.
 
 ## Installation
 
@@ -39,6 +39,17 @@ boogie --queries ./medline --pipeline pipeline.json
  - `--queries`;  the path to a directory of queries that will be analysed by groove.
  - `--pipeline`; the path to a boogie pipeline file which will be used to construct a groove pipeline.
  - `--logfile` (optional); the path to a logfile to output logs to.
+
+**Important:** Queries require a specific format that is used by groove. Each query file must contain one query, and the
+name of the file must be the topic for that query. For example, if topic 1 contains the query:
+
+```
+green eggs and ham
+```
+
+Then the file must be named `1`. Groove uses this to process evaluation and result files.
+
+must be
 
 ## DSL
 
@@ -75,7 +86,7 @@ The boogie DSL looks like a regular JSON file:
 }
 ```
 
-There are four components to a groove pipeline: the query source, the statistics source, measurements, and output
+There are seven components to a groove pipeline: the query source, the statistics source, measurements, and output
 formats. These components are reflected in the top-level keys in the DSL. Each of the components are described below.
 
 ### Query (`query`)
@@ -91,6 +102,10 @@ Query formats are specified using the `format`, the different query formats and 
 
 The options for the `pubmed` format are the same as `medline`.
 
+### `keyword`
+
+A keyword query (just one string of characters per file). No additional options may be specified.
+
 ### Statistic (`statistic`)
 
 Statistic sources provide common information retrieval methods. They are specified using `source`. The source component
@@ -101,10 +116,12 @@ before using boogie.
 #### `elasticsearch`
 
  - `hosts`: Specify a list of Elasticsearch urls (e.g. http://example.com:9200)
- - `document_type`: Elasticsearch document type.
  - `index`: Elasticsearch index to run experiments on.
+ - `document_type`: Elasticsearch document type.
+ - `field`: Field to search on (for keyword queries).
  - `analyser`: Specify a preconfigured analyser for term vectors/analyse transformation.
  - `analyse_field`: Specify the field to be analysed for term vectors/analyse transformation.
+ - `scroll`: Specify whether to scroll or not (true/false).
 
 Note: The `analyser` and `analyse_field` are to be used in the cases where you may have stemmed documents and stemmed
 queries and wish to get a term vector for a pre-stemmed term in a query. To do this, point `analyse_field` to the
@@ -228,13 +245,6 @@ a list of filename and format pairs:
  - `formats`: `format`, `filename` pairs.
 
 The format of `evaluations` is currently only `json`.
-
-### Trec Results (`trec`)
-
-Tell groove whether to output trec result files or not. If the `output` key is present, the results will be output to
-file specified.
-
- - `output`: Where to output trec result file to.
 
 ## Extending
 
