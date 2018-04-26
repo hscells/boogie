@@ -1,8 +1,8 @@
-package main
+package boogie
 
 import (
 	"bytes"
-	"github.com/TimothyJones/trecresults"
+	"github.com/hscells/trecresults"
 	"github.com/hscells/groove/analysis"
 	"github.com/hscells/groove/eval"
 	"github.com/hscells/groove/output"
@@ -13,6 +13,7 @@ import (
 	"github.com/hscells/transmute/pipeline"
 	"io/ioutil"
 	"log"
+	"github.com/hscells/groove/combinator"
 )
 
 var (
@@ -27,6 +28,7 @@ var (
 	evaluationFormatters               = map[string]output.EvaluationFormatter{}
 	rewriteTransformationMapping       = map[string]rewrite.Transformation{}
 	queryChainCandidateSelectorMapping = map[string]rewrite.QueryChainCandidateSelector{}
+	cacheMapping                       = map[string]rewrite.QueryChainCandidateSelector{}
 )
 
 // RegisterQuerySource registers a query source.
@@ -88,15 +90,16 @@ func RegisterQueryChainCandidateSelector(name string, selector rewrite.QueryChai
 func NewOracleQueryChainCandidateSelector(source string, qrels string) rewrite.OracleQueryChainCandidateSelector {
 	b, err := ioutil.ReadFile(qrels)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	q, err := trecresults.QrelsFromReader(bytes.NewReader(b))
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	if ss, ok := statisticSourceMapping[source]; ok {
-		return rewrite.NewOracleQueryChainCandidateSelector(ss, q)
+		// TODO the cache should be able to be configured.
+		return rewrite.NewOracleQueryChainCandidateSelector(ss, q, combinator.NewMapQueryCache())
 	}
 
 	log.Fatal("could not create oracle query chain candidate selector")

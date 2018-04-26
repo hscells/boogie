@@ -1,4 +1,4 @@
-package main
+package boogie
 
 import (
 	"github.com/hscells/groove/analysis"
@@ -8,12 +8,12 @@ import (
 	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
-	"github.com/hscells/groove/rewrite"
 	"log"
+	"github.com/hscells/groove/rewrite"
 )
 
 // RegisterSources initiates boogie with all the possible options in a pipeline.
-func RegisterSources() {
+func RegisterSources(dsl Pipeline) {
 	// Query sources.
 	RegisterQuerySource("medline", NewTransmuteQuerySource(query.MedlineTransmutePipeline, dsl.Query.Options))
 	RegisterQuerySource("pubmed", NewTransmuteQuerySource(query.PubMedTransmutePipeline, dsl.Query.Options))
@@ -76,12 +76,14 @@ func RegisterSources() {
 
 	// Rewrite.
 	// Query Chain Candidate Selectors.
-	RegisterQueryChainCandidateSelector("oracle", NewOracleQueryChainCandidateSelector(dsl.Statistic.Source, dsl.Output.Evaluations.Qrels))
+	if len(dsl.Rewrite.Chain) > 0 {
+		RegisterQueryChainCandidateSelector("oracle", NewOracleQueryChainCandidateSelector(dsl.Statistic.Source, dsl.Output.Evaluations.Qrels))
 
-	// Rewrite Transformations.
-	RegisterRewriteTransformation("logical_operator", rewrite.LogicalOperatorReplacement)
-	RegisterRewriteTransformation("adj_range", rewrite.AdjacencyRange)
-	RegisterRewriteTransformation("mesh_explosion", rewrite.MeSHExplosion)
-	RegisterRewriteTransformation("field_restrictions", rewrite.FieldRestrictions)
-	RegisterRewriteTransformation("adj_replacement", rewrite.AdjacencyReplacement)
+		// Rewrite Transformations.
+		RegisterRewriteTransformation("logical_operator", rewrite.NewLogicalOperatorTransformer())
+		RegisterRewriteTransformation("adj_range", rewrite.NewAdjacencyRangeTransformer())
+		RegisterRewriteTransformation("mesh_explosion", rewrite.NewMeSHExplosionTransformer())
+		RegisterRewriteTransformation("field_restrictions", rewrite.NewFieldRestrictionsTransformer())
+		RegisterRewriteTransformation("adj_replacement", rewrite.NewAdjacencyReplacementTransformer())
+	}
 }

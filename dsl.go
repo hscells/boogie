@@ -1,4 +1,4 @@
-package main
+package boogie
 
 // Pipeline is a representation of the DSL.
 type Pipeline struct {
@@ -10,6 +10,12 @@ type Pipeline struct {
 	Transformations PipelineTransformation `json:"transformations"`
 	Rewrite         PipelineRewrite        `json:"rewrite"`
 	Output          PipelineOutput         `json:"output"`
+	Cache           []PipelineCache        `json:"cache"`
+}
+
+type PipelineCache struct {
+	Type    string                 `json:"type"`
+	Options map[string]interface{} `json:"options"`
 }
 
 // PipelineRewrite represents a rewrite of queries.
