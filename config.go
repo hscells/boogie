@@ -8,12 +8,13 @@ import (
 	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
-	"log"
 	"github.com/hscells/groove/rewrite"
+	"github.com/pkg/errors"
+	"fmt"
 )
 
 // RegisterSources initiates boogie with all the possible options in a pipeline.
-func RegisterSources(dsl Pipeline) {
+func RegisterSources(dsl Pipeline) error {
 	// Query sources.
 	RegisterQuerySource("medline", NewTransmuteQuerySource(query.MedlineTransmutePipeline, dsl.Query.Options))
 	RegisterQuerySource("pubmed", NewTransmuteQuerySource(query.PubMedTransmutePipeline, dsl.Query.Options))
@@ -26,7 +27,7 @@ func RegisterSources(dsl Pipeline) {
 	case "terrier":
 		RegisterStatisticSource(s, NewTerrierStatisticsSource(dsl.Statistic.Options))
 	default:
-		log.Fatalf("could not load statistic source %s", s)
+		return errors.New(fmt.Sprintf("could not load statistic source %s", s))
 	}
 
 	// Preprocessor sources.
@@ -67,6 +68,9 @@ func RegisterSources(dsl Pipeline) {
 	RegisterEvaluator("num_rel", eval.NumRel)
 	RegisterEvaluator("num_ret", eval.NumRet)
 	RegisterEvaluator("num_rel_ret", eval.NumRelRet)
+	RegisterEvaluator("f05_measure", eval.F05Measure)
+	RegisterEvaluator("f1_measure", eval.F1Measure)
+	RegisterEvaluator("f3_measure", eval.F3Measure)
 	RegisterEvaluator("distributedness", eval.Distributedness)
 
 	// Output formats.
@@ -86,4 +90,6 @@ func RegisterSources(dsl Pipeline) {
 		RegisterRewriteTransformation("field_restrictions", rewrite.NewFieldRestrictionsTransformer())
 		RegisterRewriteTransformation("adj_replacement", rewrite.NewAdjacencyReplacementTransformer())
 	}
+
+	return nil
 }

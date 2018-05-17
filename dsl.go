@@ -4,15 +4,29 @@ package boogie
 type Pipeline struct {
 	Query           PipelineQuery          `json:"query"`
 	Statistic       PipelineStatistic      `json:"statistic"`
+	MetaWrap        string                 `json:"metawrap"`
+	CUIMapping      string                 `json:"cui_mapping"`
+	CUI2vec         string                 `json:"cui2vec"`
 	Preprocess      []string               `json:"preprocess"`
 	Measurements    []string               `json:"measurements"`
-	Evaluations     []PipelineEvaluation   `json:"evaluation"`
+	Evaluations     []string               `json:"evaluation"`
 	Transformations PipelineTransformation `json:"transformations"`
 	Rewrite         PipelineRewrite        `json:"rewrite"`
 	Output          PipelineOutput         `json:"output"`
 	Cache           []PipelineCache        `json:"cache"`
 }
 
+// PipelineMetaWrap configures the metawrap server.
+type PipelineMetaWrap struct {
+	URL string `json:"url"`
+}
+
+// PipelineCUIMapping configures the CUI mapping service.
+type PipelineCUIMapping struct {
+	Path string `json:"path"`
+}
+
+// PipelineCache configures caching.
 type PipelineCache struct {
 	Type    string                 `json:"type"`
 	Options map[string]interface{} `json:"options"`
@@ -20,9 +34,9 @@ type PipelineCache struct {
 
 // PipelineRewrite represents a rewrite of queries.
 type PipelineRewrite struct {
-	Transformations []string              `json:"transformations"`
-	Chain           string                `json:"chain"`
-	SVM             PipelineQueryChainSVM `json:"svm"`
+	Transformations []string          `json:"transformations"`
+	Chain           string            `json:"chain"`
+	Options         map[string]string `json:"options"`
 }
 
 // PipelineQueryChainSVM represents a query chain that uses an SVM.
@@ -41,11 +55,6 @@ type PipelineQuery struct {
 type PipelineStatistic struct {
 	Source  string                 `json:"source"`
 	Options map[string]interface{} `json:"options"`
-}
-
-// PipelineEvaluation represents what evaluation measures should be computed, and any parameters configuration for them.
-type PipelineEvaluation struct {
-	Evaluation string `json:"evaluate"`
 }
 
 // PipelineOutput represents an output formatter in the DSL.
