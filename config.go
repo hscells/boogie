@@ -23,7 +23,11 @@ func RegisterSources(dsl Pipeline) error {
 	// Statistic sources.
 	switch s := dsl.Statistic.Source; s {
 	case "elasticsearch":
-		RegisterStatisticSource(s, NewElasticsearchStatisticsSource(dsl.Statistic.Options))
+		ss, err := NewElasticsearchStatisticsSource(dsl.Statistic.Options)
+		if err != nil {
+			return err
+		}
+		RegisterStatisticSource(s, ss)
 	case "terrier":
 		RegisterStatisticSource(s, NewTerrierStatisticsSource(dsl.Statistic.Options))
 	default:

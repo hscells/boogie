@@ -168,7 +168,7 @@ func NewTerrierStatisticsSource(config map[string]interface{}) *stats.TerrierSta
 
 // NewElasticsearchStatisticsSource attempts to create an Elasticsearch statistics source from a configuration mapping.
 // It also tries to set some defaults for fields in case some are not specified, but they will not be sensible.
-func NewElasticsearchStatisticsSource(config map[string]interface{}) *stats.ElasticsearchStatisticsSource {
+func NewElasticsearchStatisticsSource(config map[string]interface{}) (*stats.ElasticsearchStatisticsSource, error) {
 	var esHosts []string
 	documentType := "doc"
 	index := "index"
