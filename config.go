@@ -30,6 +30,8 @@ func RegisterSources(dsl Pipeline) error {
 		RegisterStatisticSource(s, ss)
 	case "terrier":
 		RegisterStatisticSource(s, NewTerrierStatisticsSource(dsl.Statistic.Options))
+	case "entrez":
+		RegisterStatisticSource(s, NewEntrezStatisticsSource(dsl.Statistic.Options))
 	default:
 		return errors.New(fmt.Sprintf("could not load statistic source %s", s))
 	}

@@ -172,9 +172,6 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) (*stats.Ela
 	var esHosts []string
 	documentType := "doc"
 	index := "index"
-	field := "text"
-	analyser := "standard"
-	analyseField := ""
 	scroll := false
 
 	if hosts, ok := config["hosts"]; ok {
@@ -213,18 +210,6 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) (*stats.Ela
 		index = i.(string)
 	}
 
-	if f, ok := config["field"]; ok {
-		field = f.(string)
-	}
-
-	if a, ok := config["analyser"]; ok {
-		analyser = a.(string)
-	}
-
-	if a, ok := config["analyse_field"]; ok {
-		analyseField = a.(string)
-	}
-
 	if s, ok := config["scroll"]; ok {
 		scroll = s.(bool)
 	}
@@ -232,11 +217,45 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) (*stats.Ela
 	return stats.NewElasticsearchStatisticsSource(
 		stats.ElasticsearchDocumentType(documentType),
 		stats.ElasticsearchIndex(index),
-		stats.ElasticsearchField(field),
 		stats.ElasticsearchHosts(esHosts...),
 		stats.ElasticsearchParameters(params),
-		stats.ElasticsearchAnalyser(analyser),
-		stats.ElasticsearchAnalysedField(analyseField),
 		stats.ElasticsearchSearchOptions(searchOptions),
 		stats.ElasticsearchScroll(scroll))
+}
+
+func NewEntrezStatisticsSource(config map[string]interface{}) stats.EntrezStatisticsSource {
+	var tool, email, key string
+
+	if d, ok := config["tool"]; ok {
+		tool = d.(string)
+	}
+
+	if d, ok := config["email"]; ok {
+		tool = d.(string)
+	}
+
+	if d, ok := config["key"]; ok {
+		key = d.(string)
+	}
+
+	var searchOptions stats.SearchOptions
+	if search, ok := config["search"].(map[string]interface{}); ok {
+		if size, ok := search["size"].(float64); ok {
+			searchOptions.Size = int(size)
+		} else {
+			searchOptions.Size = 1000
+		}
+
+		if runName, ok := search["run_name"].(string); ok {
+			searchOptions.RunName = runName
+		} else {
+			searchOptions.RunName = "run"
+		}
+	}
+
+	return stats.NewEntrezStatisticsSource(
+		stats.EntrezAPIKey(key),
+		stats.EntrezEmail(email),
+		stats.EntrezTool(tool),
+		stats.EntrezOptions(searchOptions))
 }
