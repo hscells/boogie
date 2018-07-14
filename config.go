@@ -5,12 +5,12 @@ import (
 	"github.com/hscells/groove/analysis/postqpp"
 	"github.com/hscells/groove/analysis/preqpp"
 	"github.com/hscells/groove/eval"
+	"github.com/hscells/groove/learning"
 	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
-	"github.com/hscells/groove/rewrite"
-	"github.com/pkg/errors"
 	"fmt"
+	"errors"
 )
 
 // RegisterSources initiates boogie with all the possible options in a pipeline.
@@ -19,22 +19,6 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterQuerySource("medline", NewTransmuteQuerySource(query.MedlineTransmutePipeline, dsl.Query.Options))
 	RegisterQuerySource("pubmed", NewTransmuteQuerySource(query.PubMedTransmutePipeline, dsl.Query.Options))
 	RegisterQuerySource("keyword", NewKeywordQuerySource(dsl.Query.Options))
-
-	// Statistic sources.
-	switch s := dsl.Statistic.Source; s {
-	case "elasticsearch":
-		ss, err := NewElasticsearchStatisticsSource(dsl.Statistic.Options)
-		if err != nil {
-			return err
-		}
-		RegisterStatisticSource(s, ss)
-	case "terrier":
-		RegisterStatisticSource(s, NewTerrierStatisticsSource(dsl.Statistic.Options))
-	case "entrez":
-		RegisterStatisticSource(s, NewEntrezStatisticsSource(dsl.Statistic.Options))
-	default:
-		return errors.New(fmt.Sprintf("could not load statistic source %s", s))
-	}
 
 	// Preprocessor sources.
 	RegisterPreprocessor("alphanum", preprocess.AlphaNum)
@@ -51,8 +35,6 @@ func RegisterSources(dsl Pipeline) error {
 
 	// Measurement sources.
 	RegisterMeasurement("term_count", analysis.TermCount)
-	RegisterMeasurement("keyword_count", analysis.KeywordCount)
-	RegisterMeasurement("boolean_query_count", analysis.BooleanQueryCount)
 	RegisterMeasurement("sum_idf", preqpp.SumIDF)
 	RegisterMeasurement("avg_idf", preqpp.AvgIDF)
 	RegisterMeasurement("max_idf", preqpp.MaxIDF)
@@ -77,24 +59,50 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterEvaluator("f05_measure", eval.F05Measure)
 	RegisterEvaluator("f1_measure", eval.F1Measure)
 	RegisterEvaluator("f3_measure", eval.F3Measure)
-	RegisterEvaluator("distributedness", eval.Distributedness)
+	// TODO add WSS evaluation metric.
 
 	// Output formats.
 	RegisterMeasurementFormatter("json", output.JsonMeasurementFormatter)
 	RegisterMeasurementFormatter("csv", output.CsvMeasurementFormatter)
 	RegisterEvaluationFormatter("json", output.JsonEvaluationFormatter)
 
-	// Rewrite.
-	// Query Chain Candidate Selectors.
-	if len(dsl.Rewrite.Chain) > 0 {
-		RegisterQueryChainCandidateSelector("oracle", NewOracleQueryChainCandidateSelector(dsl.Statistic.Source, dsl.Output.Evaluations.Qrels))
+	// Query Rewrite transformations.
+	RegisterRewriteTransformation("logical_operator", learning.NewLogicalOperatorTransformer())
+	RegisterRewriteTransformation("adj_range", learning.NewAdjacencyRangeTransformer())
+	RegisterRewriteTransformation("mesh_explosion", learning.NewMeSHExplosionTransformer())
+	RegisterRewriteTransformation("field_restrictions", learning.NewFieldRestrictionsTransformer())
+	RegisterRewriteTransformation("adj_replacement", learning.NewAdjacencyReplacementTransformer())
+	RegisterRewriteTransformation("clause_removal", learning.NewClauseRemovalTransformer())
+	// TODO add cui_expansion transformation.
 
-		// Rewrite Transformations.
-		RegisterRewriteTransformation("logical_operator", rewrite.NewLogicalOperatorTransformer())
-		RegisterRewriteTransformation("adj_range", rewrite.NewAdjacencyRangeTransformer())
-		RegisterRewriteTransformation("mesh_explosion", rewrite.NewMeSHExplosionTransformer())
-		RegisterRewriteTransformation("field_restrictions", rewrite.NewFieldRestrictionsTransformer())
-		RegisterRewriteTransformation("adj_replacement", rewrite.NewAdjacencyReplacementTransformer())
+	// Machine learning models.
+	switch m := dsl.Learning.Model; m {
+	case "ltr_query_chain":
+		RegisterModel(m, learning.NewLearningToRankQueryChain(dsl.Learning.Options["model_file"]))
+	case "reinforcement_query_chain":
+		RegisterModel(m, learning.NewReinforcementQueryChain())
+	default:
+		return errors.New(fmt.Sprintf("could not load model of type %s", m))
+	}
+
+	// Statistic sources.
+	switch s := dsl.Statistic.Source; s {
+	case "elasticsearch":
+		ss, err := NewElasticsearchStatisticsSource(dsl.Statistic.Options)
+		if err != nil {
+			return err
+		}
+		RegisterStatisticSource(s, ss)
+	case "terrier":
+		RegisterStatisticSource(s, NewTerrierStatisticsSource(dsl.Statistic.Options))
+	case "entrez":
+		ss, err := NewEntrezStatisticsSource(dsl.Statistic.Options)
+		if err != nil {
+			return err
+		}
+		RegisterStatisticSource(s, ss)
+	default:
+		return errors.New(fmt.Sprintf("could not load statistic source %s", s))
 	}
 
 	return nil

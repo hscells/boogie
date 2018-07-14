@@ -2,18 +2,18 @@ package boogie
 
 import (
 	"bytes"
-	"github.com/hscells/trecresults"
 	"github.com/hscells/groove/analysis"
+	"github.com/hscells/groove/combinator"
 	"github.com/hscells/groove/eval"
+	"github.com/hscells/groove/learning"
 	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
-	"github.com/hscells/groove/rewrite"
 	"github.com/hscells/groove/stats"
 	"github.com/hscells/transmute/pipeline"
+	"github.com/hscells/trecresults"
 	"io/ioutil"
 	"log"
-	"github.com/hscells/groove/combinator"
 )
 
 var (
@@ -26,9 +26,8 @@ var (
 	measurementFormatters              = map[string]output.MeasurementFormatter{}
 	evaluationMapping                  = map[string]eval.Evaluator{}
 	evaluationFormatters               = map[string]output.EvaluationFormatter{}
-	rewriteTransformationMapping       = map[string]rewrite.Transformation{}
-	queryChainCandidateSelectorMapping = map[string]rewrite.QueryChainCandidateSelector{}
-	cacheMapping                       = map[string]rewrite.QueryChainCandidateSelector{}
+	rewriteTransformationMapping       = map[string]learning.Transformation{}
+	modelMapping                       = map[string]learning.Model{}
 )
 
 // RegisterQuerySource registers a query source.
@@ -77,17 +76,17 @@ func RegisterEvaluationFormatter(name string, formatter output.EvaluationFormatt
 }
 
 // RegisterRewriteTransformation registers a rewrite transformation.
-func RegisterRewriteTransformation(name string, transformation rewrite.Transformation) {
+func RegisterRewriteTransformation(name string, transformation learning.Transformation) {
 	rewriteTransformationMapping[name] = transformation
 }
 
 // RegisterQueryChainCandidateSelector registers a query chain candidate selector.
-func RegisterQueryChainCandidateSelector(name string, selector rewrite.QueryChainCandidateSelector) {
-	queryChainCandidateSelectorMapping[name] = selector
+func RegisterModel(name string, model learning.Model) {
+	modelMapping[name] = model
 }
 
 // NewOracleQueryChainCandidateSelector creates a new oracle query chain candidate selector.
-func NewOracleQueryChainCandidateSelector(source string, qrels string) rewrite.OracleQueryChainCandidateSelector {
+func NewOracleQueryChainCandidateSelector(source string, qrels string) learning.OracleQueryChainCandidateSelector {
 	b, err := ioutil.ReadFile(qrels)
 	if err != nil {
 		panic(err)
@@ -99,11 +98,11 @@ func NewOracleQueryChainCandidateSelector(source string, qrels string) rewrite.O
 
 	if ss, ok := statisticSourceMapping[source]; ok {
 		// TODO the cache should be able to be configured.
-		return rewrite.NewOracleQueryChainCandidateSelector(ss, q, combinator.NewMapQueryCache())
+		return learning.NewOracleQueryChainCandidateSelector(ss, q, combinator.NewMapQueryCache())
 	}
 
 	log.Fatal("could not create oracle query chain candidate selector")
-	return rewrite.OracleQueryChainCandidateSelector{}
+	return learning.OracleQueryChainCandidateSelector{}
 }
 
 // NewKeywordQuerySource creates a "keyword query" query source.
@@ -223,7 +222,7 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) (*stats.Ela
 		stats.ElasticsearchScroll(scroll))
 }
 
-func NewEntrezStatisticsSource(config map[string]interface{}) stats.EntrezStatisticsSource {
+func NewEntrezStatisticsSource(config map[string]interface{}) (stats.EntrezStatisticsSource, error) {
 	var tool, email, key string
 
 	if d, ok := config["tool"]; ok {

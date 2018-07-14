@@ -11,19 +11,10 @@ type Pipeline struct {
 	Measurements    []string               `json:"measurements"`
 	Evaluations     []string               `json:"evaluation"`
 	Transformations PipelineTransformation `json:"transformations"`
-	Rewrite         PipelineRewrite        `json:"rewrite"`
+	Learning        PipelineLearning       `json:"learning"`
+	Rewrite         []string               `json:"rewrite"`
 	Output          PipelineOutput         `json:"output"`
 	Cache           []PipelineCache        `json:"cache"`
-}
-
-// PipelineMetaWrap configures the metawrap server.
-type PipelineMetaWrap struct {
-	URL string `json:"url"`
-}
-
-// PipelineCUIMapping configures the CUI mapping service.
-type PipelineCUIMapping struct {
-	Path string `json:"path"`
 }
 
 // PipelineCache configures caching.
@@ -33,15 +24,9 @@ type PipelineCache struct {
 }
 
 // PipelineRewrite represents a rewrite of queries.
-type PipelineRewrite struct {
-	Transformations []string          `json:"transformations"`
-	Chain           string            `json:"chain"`
-	Options         map[string]string `json:"options"`
-}
-
-// PipelineQueryChainSVM represents a query chain that uses an SVM.
-type PipelineQueryChainSVM struct {
-	Model string `json:"model"`
+type PipelineLearning struct {
+	Model   string            `json:"model"`
+	Options map[string]string `json:"options"`
 }
 
 // PipelineQuery represents a query source in the DSL.
