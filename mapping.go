@@ -14,6 +14,9 @@ import (
 	"github.com/hscells/trecresults"
 	"io/ioutil"
 	"log"
+	"github.com/hscells/cui2vec"
+	"os"
+	"github.com/hscells/metawrap"
 )
 
 var (
@@ -78,6 +81,26 @@ func RegisterEvaluationFormatter(name string, formatter output.EvaluationFormatt
 // RegisterRewriteTransformation registers a rewrite transformation.
 func RegisterRewriteTransformation(name string, transformation learning.Transformation) {
 	rewriteTransformationMapping[name] = transformation
+}
+
+func RegisterCui2VecTransformation(dsl Pipeline) error {
+	if len(dsl.Utilities.CUI2vec) > 0 && len(dsl.Utilities.CUIMapping) > 0 && len(dsl.Utilities.MetaWrap) > 0 {
+		mapping, err := cui2vec.LoadCUIMapping(dsl.Utilities.CUIMapping)
+		if err != nil {
+			return err
+		}
+		f, err := os.OpenFile(dsl.Utilities.CUI2vec, os.O_RDONLY, 0644)
+		if err != nil {
+			return err
+		}
+		vector, err := cui2vec.Load(f, dsl.Utilities.CUI2vecSkip)
+		if err != nil {
+			return err
+		}
+		mw := metawrap.NewMetaMapClient(dsl.Utilities.MetaWrap)
+		RegisterRewriteTransformation("cui2vec_expansion", learning.Newcui2vecExpansionTransformer(vector, mapping, mw))
+	}
+	return nil
 }
 
 // RegisterQueryChainCandidateSelector registers a query chain candidate selector.

@@ -4,9 +4,7 @@ package boogie
 type Pipeline struct {
 	Query           PipelineQuery          `json:"query"`
 	Statistic       PipelineStatistic      `json:"statistic"`
-	MetaWrap        string                 `json:"metawrap"`
-	CUIMapping      string                 `json:"cui_mapping"`
-	CUI2vec         string                 `json:"cui2vec"`
+	Utilities       PipelineUtilities      `json:"utilities"`
 	Preprocess      []string               `json:"preprocess"`
 	Measurements    []string               `json:"measurements"`
 	Evaluations     []string               `json:"evaluation"`
@@ -17,16 +15,32 @@ type Pipeline struct {
 	Cache           []PipelineCache        `json:"cache"`
 }
 
+// PipelineUtilities is used to reference external tools or files.
+type PipelineUtilities struct {
+	MetaWrap    string `json:"metawrap"`
+	CUIMapping  string `json:"cui_mapping"`
+	CUI2vec     string `json:"cui2vec"`
+	CUI2vecSkip bool   `json:"cui2vec_skip_first"`
+}
+
 // PipelineCache configures caching.
 type PipelineCache struct {
 	Type    string                 `json:"type"`
 	Options map[string]interface{} `json:"options"`
 }
 
-// PipelineRewrite represents a rewrite of queries.
+// PipelineLearning represents a configuration of a learning model.
+// The model specified in `model` is configured via `options`.
+//
+// The train, test, validate, and generate methods can be configured
+// via the options of the same names.
 type PipelineLearning struct {
-	Model   string            `json:"model"`
-	Options map[string]string `json:"options"`
+	Model    string            `json:"model"`
+	Options  map[string]string `json:"options"`
+	Train    map[string]string `json:"train"`
+	Test     map[string]string `json:"test"`
+	Validate map[string]string `json:"validate"`
+	Generate map[string]string `json:"generate"`
 }
 
 // PipelineQuery represents a query source in the DSL.

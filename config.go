@@ -15,6 +15,28 @@ import (
 
 // RegisterSources initiates boogie with all the possible options in a pipeline.
 func RegisterSources(dsl Pipeline) error {
+	// Statistic sources.
+	// Configuration of other parts of the pipeline can depend on the statistics source
+	// so this needs to be set up first.
+	switch s := dsl.Statistic.Source; s {
+	case "elasticsearch":
+		ss, err := NewElasticsearchStatisticsSource(dsl.Statistic.Options)
+		if err != nil {
+			return err
+		}
+		RegisterStatisticSource(s, ss)
+	case "terrier":
+		RegisterStatisticSource(s, NewTerrierStatisticsSource(dsl.Statistic.Options))
+	case "entrez":
+		ss, err := NewEntrezStatisticsSource(dsl.Statistic.Options)
+		if err != nil {
+			return err
+		}
+		RegisterStatisticSource(s, ss)
+	default:
+		return errors.New(fmt.Sprintf("could not load statistic source %s", s))
+	}
+
 	// Query sources.
 	RegisterQuerySource("medline", NewTransmuteQuerySource(query.MedlineTransmutePipeline, dsl.Query.Options))
 	RegisterQuerySource("pubmed", NewTransmuteQuerySource(query.PubMedTransmutePipeline, dsl.Query.Options))
@@ -49,6 +71,16 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterMeasurement("weg", postqpp.WeightedExpansionGain)
 	RegisterMeasurement("ncq", postqpp.NormalisedQueryCommitment)
 	RegisterMeasurement("clarity_score", postqpp.ClarityScore)
+	RegisterMeasurement("retrieval_size", preqpp.RetrievalSize)
+	RegisterMeasurement("boolean_clauses", analysis.BooleanClauses)
+	RegisterMeasurement("boolean_keywords", analysis.BooleanKeywords)
+	RegisterMeasurement("boolean_fields", analysis.BooleanFields)
+	RegisterMeasurement("boolean_truncated", analysis.BooleanTruncated)
+	RegisterMeasurement("mesh_keywords", analysis.MeshKeywordCount)
+	RegisterMeasurement("mesh_exploded", analysis.MeshExplodedCount)
+	RegisterMeasurement("mesh_non_exploded", analysis.MeshNonExplodedCount)
+	RegisterMeasurement("mesh_avg_depth", analysis.MeshAvgDepth)
+	RegisterMeasurement("mesh_max_depth", analysis.MeshMaxDepth)
 
 	// Evaluations measurements.
 	RegisterEvaluator("precision", eval.PrecisionEvaluator)
@@ -59,7 +91,7 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterEvaluator("f05_measure", eval.F05Measure)
 	RegisterEvaluator("f1_measure", eval.F1Measure)
 	RegisterEvaluator("f3_measure", eval.F3Measure)
-	// TODO add WSS evaluation metric.
+	RegisterEvaluator("wss", eval.NewWSSEvaluator(0)) // The collection size is configured later.
 
 	// Output formats.
 	RegisterMeasurementFormatter("json", output.JsonMeasurementFormatter)
@@ -67,12 +99,17 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterEvaluationFormatter("json", output.JsonEvaluationFormatter)
 
 	// Query Rewrite transformations.
-	RegisterRewriteTransformation("logical_operator", learning.NewLogicalOperatorTransformer())
+	RegisterRewriteTransformation("logical_operator_replacement", learning.NewLogicalOperatorTransformer())
 	RegisterRewriteTransformation("adj_range", learning.NewAdjacencyRangeTransformer())
 	RegisterRewriteTransformation("mesh_explosion", learning.NewMeSHExplosionTransformer())
+	RegisterRewriteTransformation("mesh_parent", learning.NewMeshParentTransformer())
 	RegisterRewriteTransformation("field_restrictions", learning.NewFieldRestrictionsTransformer())
 	RegisterRewriteTransformation("adj_replacement", learning.NewAdjacencyReplacementTransformer())
 	RegisterRewriteTransformation("clause_removal", learning.NewClauseRemovalTransformer())
+	err := RegisterCui2VecTransformation(dsl)
+	if err != nil {
+		return err
+	}
 	// TODO add cui_expansion transformation.
 
 	// Machine learning models.
@@ -83,26 +120,6 @@ func RegisterSources(dsl Pipeline) error {
 		RegisterModel(m, learning.NewReinforcementQueryChain())
 	default:
 		return errors.New(fmt.Sprintf("could not load model of type %s", m))
-	}
-
-	// Statistic sources.
-	switch s := dsl.Statistic.Source; s {
-	case "elasticsearch":
-		ss, err := NewElasticsearchStatisticsSource(dsl.Statistic.Options)
-		if err != nil {
-			return err
-		}
-		RegisterStatisticSource(s, ss)
-	case "terrier":
-		RegisterStatisticSource(s, NewTerrierStatisticsSource(dsl.Statistic.Options))
-	case "entrez":
-		ss, err := NewEntrezStatisticsSource(dsl.Statistic.Options)
-		if err != nil {
-			return err
-		}
-		RegisterStatisticSource(s, ss)
-	default:
-		return errors.New(fmt.Sprintf("could not load statistic source %s", s))
 	}
 
 	return nil

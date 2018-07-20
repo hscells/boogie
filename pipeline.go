@@ -44,17 +44,17 @@ func CreatePipeline(dsl Pipeline) (pipeline.GroovePipeline, error) {
 		return g, fmt.Errorf("a statistic source is required for measurements")
 	}
 
-	if len(dsl.Measurements) > 0 && len(dsl.Output.Measurements) == 0 {
-		return g, fmt.Errorf("at least one output format must be supplied when using analysis measurements")
-	}
+	//if len(dsl.Measurements) > 0 && len(dsl.Output.Measurements) == 0  {
+	//	return g, fmt.Errorf("at least one output format must be supplied when using analysis measurements")
+	//}
 
 	if len(dsl.Output.Measurements) > 0 && len(dsl.Measurements) == 0 {
 		return g, fmt.Errorf("at least one analysis measurement must be supplied for the output formats")
 	}
 
-	if len(dsl.Evaluations) > 0 && len(dsl.Output.Evaluations.Measurements) == 0 {
-		return g, fmt.Errorf("at least one output format must be supplied when using evaluation measurements")
-	}
+	//if len(dsl.Evaluations) > 0 && len(dsl.Output.Evaluations.Measurements) == 0 {
+	//	return g, fmt.Errorf("at least one output format must be supplied when using evaluation measurements")
+	//}
 
 	if len(dsl.Output.Evaluations.Measurements) > 0 && len(dsl.Evaluations) == 0 {
 		return g, fmt.Errorf("at least one evaluation measurement must be supplied for the output formats")
@@ -72,6 +72,17 @@ func CreatePipeline(dsl Pipeline) (pipeline.GroovePipeline, error) {
 	g.Evaluations = []eval.Evaluator{}
 	for _, measurement := range dsl.Evaluations {
 		if m, ok := evaluationMapping[measurement]; ok {
+			// Here we configure wss directly with the N component (collection size).
+			if measurement == "wss" {
+				if _, ok := m.(eval.WorkSavedOverSampling); ok {
+					mm := m.(eval.WorkSavedOverSampling)
+					mm.N, err = g.StatisticsSource.CollectionSize()
+					if err != nil {
+						return g, err
+					}
+					m = mm
+				}
+			}
 			g.Evaluations = append(g.Evaluations, m)
 		} else {
 			return g, fmt.Errorf("%v is not a known evaluation measurement", measurement)
@@ -128,15 +139,52 @@ func CreatePipeline(dsl Pipeline) (pipeline.GroovePipeline, error) {
 		}
 	}
 
-	//g.QueryChain
-	if len(dsl.Rewrite) > 0 {
-		var transformations []learning.Transformation
+	// Configure the transformations that can be applied in the context of a query chain model.
+	var transformations []learning.Transformation
+	if len(dsl.Rewrite) > 0 && len(dsl.Learning.Model) > 0 {
 		for _, transformation := range dsl.Rewrite {
 			if t, ok := rewriteTransformationMapping[transformation]; ok {
 				transformations = append(transformations, t)
 			} else {
 				return g, fmt.Errorf("%v is not a known rewrite transformation", transformation)
 			}
+		}
+	}
+
+	// Configure the learning model to use.
+	if len(dsl.Learning.Model) > 0 {
+		if m, ok := modelMapping[dsl.Learning.Model]; ok {
+			if dsl.Learning.Train != nil {
+				g.ModelConfiguration.Train = true
+			}
+			if dsl.Learning.Test != nil {
+				g.ModelConfiguration.Test = true
+			}
+			if dsl.Learning.Validate != nil {
+				g.ModelConfiguration.Validate = true
+			}
+			if dsl.Learning.Generate != nil {
+				g.ModelConfiguration.Generate = true
+			}
+
+			g.Model = m
+			switch m := g.Model.(type) {
+			case *learning.QueryChain:
+				m.QrelsFile = g.EvaluationFormatters.EvaluationQrels
+				m.GenerationDepth = 5
+				m.Evaluators = g.Evaluations
+				m.Measurements = g.Measurements
+				m.Transformations = transformations
+				m.StatisticsSource = g.StatisticsSource
+				m.QrelsFile = g.EvaluationFormatters.EvaluationQrels
+				if g.ModelConfiguration.Generate {
+					m.GeneartionFile = dsl.Learning.Generate["output"]
+				}
+			default:
+				return g, fmt.Errorf("unable to properly configure the learning model %s, see pipeline.go for more information", dsl.Learning.Model)
+			}
+		} else {
+			return g, fmt.Errorf("%s is not a known learning model", dsl.Learning.Model)
 		}
 	}
 
