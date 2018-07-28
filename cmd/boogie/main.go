@@ -28,7 +28,7 @@ type args struct {
 }
 
 func (args) Version() string {
-	return "boogie 19.Apr.2018"
+	return "boogie 28.Jul.2018"
 }
 
 func (args) Description() string {

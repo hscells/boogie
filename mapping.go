@@ -253,7 +253,7 @@ func NewEntrezStatisticsSource(config map[string]interface{}) (stats.EntrezStati
 	}
 
 	if d, ok := config["email"]; ok {
-		tool = d.(string)
+		email = d.(string)
 	}
 
 	if d, ok := config["key"]; ok {
