@@ -23,7 +23,7 @@ how you choose to store your documents from how you get your experiments done.
 boogie can be installed with `go install`.
 
 ```bash
-go install github.com/hscells/boogie
+go install github.com/hscells/boogie/cmd/boogie
 ```
 
 ## Usage
@@ -33,10 +33,9 @@ For command line help, see `boogie --help`.
 command line usage:
 
 ```bash
-boogie --queries ./medline --pipeline pipeline.json
+boogie --pipeline pipeline.json
 ```
 
- - `--queries`;  the path to a directory of queries that will be analysed by groove.
  - `--pipeline`; the path to a boogie pipeline file which will be used to construct a groove pipeline.
  - `--logfile` (optional); the path to a logfile to output logs to.
 
@@ -49,49 +48,49 @@ green eggs and ham
 
 Then the file must be named `1`. Groove uses this to process evaluation and result files.
 
-must be
-
 ## DSL
 
 boogie uses a domain specific language (DSL) for creating [groove](https://github.com/hscells/groove) pipelines.
-The boogie DSL looks like a regular JSON file:
+The boogie DSL looks like a regular JSON file (although JSON is notoriously bad for these types of things, I think in this case it is OK). The example below provides a pipeline for running a simple IR experiment - run some queries in a search engine and evaluate them:
 
 ```json
 {
   "query": {
-    "source": "medline"
+    "format": "medline",
+    "path": "path/to/queries"
   },
   "statistic": {
     "source": "elasticsearch"
+    ...
   },
-  "measurements": [
-    "keyword_count",
-    "term_count",
-    "avg_idf"
-    "avg_ictf"
-  ],
-  "preprocess": [
-    "lowercase"
-  ],
-  "output": [
-    {
-      "format": "json",
-      "filename": "analysis.json"
-    },
-    {
-      "format": "csv",
-      "filename": "analysis.csv"
-    }
+  "evaluations": [
+    "precision",
+    "recall",
+    "f1"
   ]
+  "output": {
+    "evaluations": {
+      "qrels": "medline.qrels",
+      "formats": [
+        {
+          "format": "json",
+          "filename": "medline_bool.json"
+        }
+      ]
+    },
+    "trec_results": {
+      "output": "medline_bool.results"
+    }
+  }
 }
 ```
 
-There are seven components to a groove pipeline: the query source, the statistics source, measurements, and output
-formats. These components are reflected in the top-level keys in the DSL. Each of the components are described below.
+There are currently 11 different top-level configuration items that may or may not integrate with each other. I have tried my best to describe each of these items and how they can interact with each other.
 
 ### Query (`query`)
 
-Query formats are specified using the `format`, the different query formats and options are detailed below.
+Query formats are specified using the `format`, the different query formats and options are detailed below. The path to
+your queries should be specified using `path`.
 
 #### `medline`
 
@@ -111,7 +110,9 @@ A keyword query (just one string of characters per file). No additional options 
 Statistic sources provide common information retrieval methods. They are specified using `source`. The source component
 and options are detailed below. groove/boogie does not attempt to configure information retrieval systems (e.g. sources
 for statistics), only attempt to wrap them in some way. For this reason, you should read how to set up these systems
-before using boogie.
+before using boogie. A statistic source can only be configured if `query` has been configured. 
+
+There are currently three configured statistic sources: Elasticsearch, Terrier, and Entrez.
 
 #### `elasticsearch`
 
@@ -152,9 +153,14 @@ pipeline (in the case above would be "text").
 
  - `properties`: Location of the terrier properties file.
 
+#### `entrez`
+
+ - `email`: Email of the account using Entrez.
+ - `tool`: Tool name accessing Entrez.
+ - `key`: (optional) Key parameter of Entrez (to increase rate limit).
+
 #### Universal options:
 
- - `field`: Document field for analysis.
  - `params`: Map of parameter name to float value (e.g. k, lambda).
  - `search`: Search properties; `size` (maximum number of results to retrieve), `run_name` (name of the run for trec)
 
@@ -186,14 +192,25 @@ Additionally, the following transformation can be used in conjunction with the E
 
 Operations are applied in the order specified.
 
+### Query Rewrites (`rewrite`)
+
+Rewrites are a different type of transformation in that they can be applied in multiple ways to a query. These are useful for creating query variations or exploring the space of possible queries. Currently the only use for this is in the query chain machine learning model. But the variations could, for example, just be output to a directory (I'm too lazy to do this).
+
+The possible rewrites that are available are:
+
+ - `logical_operator_replacement`: Replace ORs with ANDs and ANDs with ORs
+ - `adj_range`: Modify the distance of adjacency operators.
+ - `adj_replacement`: Replace adjacency operators with AND operators.
+ - `mesh_explosion`: Explode/Unexplode a MeSH keyword.
+ - `mesh_parent`: Move a MeSH keyword up one level in the ontology.
+ - `field_restrictions`: Permute the fields being searched on.
+
 ### Measurements (`measurements`)
 
 Measurements are methods that apply a calculation to a query using a statistics source. All measurements return a
-floating point number. This component accepts a list of preprocessors:
+floating point number. This component accepts a list of measurements:
 
  - `term_count` - Total number of query terms.
- - `keyword_count` - Total number of keywords used in a Boolean query.
- - `boolean_query_count` - Total number of clauses in a Boolean query.
  - `avg_ictf` - Average inverse collection term frequency.
  - `avg_idf` - Average inverse document frequency.
  - `sum_idf` - Sum inverse document frequency.
@@ -201,12 +218,25 @@ floating point number. This component accepts a list of preprocessors:
  - `std_idf` - Standard Deviation inverse document frequency.
  - `sum_cqs` - Sum Collection Query Similarity
  - `max_cqs` - Max Collection Query Similarity.
+ - `avg_cqs` - Average Collection Query Similarity.
  - `scs` - Simplified Clarity Score.
  - `query_scope` - Query Scope.
  - `wig` - Weighted Information Gain.
  - `weg` - Weighted Entropy Gain.
  - `ncq` - Normalised Query Commitment.
  - `clarity_score` - Clarity Score.
+ - `retrieval_size` - Total number of documents retrieved.
+ - `boolean_clauses` - Number of clauses in Boolean query.
+ - `boolean_keywords` - Number of keywords in Boolean query.
+ - `boolean_fields` - Number of fields in Boolean query.
+ - `boolean_truncated` - Number of wildcard keywords in Boolean query.
+ - `mesh_keywords` - Number of MeSH keywords in Boolean query.
+ - `mesh_exploded` - Number of Exploded MeSH keywords in Boolean query.
+ - `mesh_non_exploded` - Number of Non-Exploded MeSH keywords in Boolean Query
+ -  `mesh_avg_depth` - Average depth of MeSH keywords in ontology in Boolean query.
+ -  `mesh_max_depth` - Maximum depth of MeSH keywords in ontology in Boolean query.
+
+Measurements can just be output to a file, or be used as inputs to machine learning (for example feature engineering; see below).
 
 ### Evaluation (`evaluation`)
 
@@ -222,6 +252,10 @@ The list of measures are as follows:
  - `num_rel_ret`: Total number of relevant documents that were retrieved.
  - `precision`: Ratio of relevant retrieved documents to retrieved documents.
  - `recall`: Ratio of relevant retrieved documents to relevant documents.
+ - `f05_measure`: F-beta 0.5
+ - `f1_measure`: F-beta 1
+ - `f3_measure`: F-beta 3
+ - `wss`: Work Saved over Sampling
 
 ### Output (`output`)
 
@@ -246,11 +280,53 @@ a list of filename and format pairs:
 
 The format of `evaluations` is currently only `json`.
 
+### Machine Learning (`learning`)
+
+Machine learning is kind of new in boogie and it's still not perfect, but at the moment there is some learning to rank being implemented. 
+
+ - `model`: Which machine learning model to use (currently available: `query_chain`).
+ - `options`: Additional model-specific options (see below).
+ - `train`: Options for training.
+ - `test`: Options for testing.
+ - `generate`: Options for generating data.
+
+Even if a model does not have configuration options for training, testing, or generating, it tells the pipeline which operation(s) to perform.
+
+#### `query_chain`
+
+##### Options:
+
+ - `candidate_selector`: one of `ltr_svmrank`, `ltr_quickrank`, or `reinforcement` (only `ltr_quickrank` is fully implemented).
+    - `ltr_svmrank` requires `model_file` to be configured here.
+    - `ltr_quickrank` requires `binary` to be configured here, as well as any arguments to quickrank (see: https://github.com/hpclab/quickrank)
+ 
+##### Generate:
+
+Query chain generate requires that a query, statistic source, measurements, rewrite, evaluation, and output (qrels) is configured.
+
+ - `output`: Path to generate features to.
+
 ## Extending
 
 Adding a query format, statistics source, preprocessing step, measurement, or output format requires firstly to
 implement the corresponding [groove](https://github.com/hscells/groove) interface. Once an interface has been
 implemented, it can be added to boogie by registering it in the [config](config.go).
+
+I am open to contributions, but having said that I would not be contributing at this point in time unless it was to a really stable API like evaluation or measurements.
+
+## Citing
+
+If you use this work for scientific publication, please reference
+
+```
+@inproceedings{scells2018framework,
+ author = {Scells, Harrisen and Locke, Daniel and Zuccon, Guido},
+ title = {An Information Retrieval Experiment Framework for Domain Specific Applications},
+ booktitle = {The 41st International ACM SIGIR Conference on Research \&\#38; Development in Information Retrieval},
+ series = {SIGIR '18},
+ year = {2018},
+} 
+```
 
 ## Logo
 
