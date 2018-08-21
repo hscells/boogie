@@ -16,7 +16,7 @@ import (
 	"log"
 	"github.com/hscells/cui2vec"
 	"os"
-	"github.com/hscells/metawrap"
+	"github.com/hscells/quickumlsrest"
 )
 
 var (
@@ -84,7 +84,7 @@ func RegisterRewriteTransformation(name string, transformation learning.Transfor
 }
 
 func RegisterCui2VecTransformation(dsl Pipeline) error {
-	if len(dsl.Utilities.CUI2vec) > 0 && len(dsl.Utilities.CUIMapping) > 0 && len(dsl.Utilities.MetaWrap) > 0 {
+	if len(dsl.Utilities.CUI2vec) > 0 && len(dsl.Utilities.CUIMapping) > 0 && len(dsl.Utilities.QuickUMLSRest) > 0 {
 		mapping, err := cui2vec.LoadCUIMapping(dsl.Utilities.CUIMapping)
 		if err != nil {
 			return err
@@ -93,12 +93,12 @@ func RegisterCui2VecTransformation(dsl Pipeline) error {
 		if err != nil {
 			return err
 		}
-		vector, err := cui2vec.Load(f, dsl.Utilities.CUI2vecSkip)
+		vector, err := cui2vec.LoadModel(f, dsl.Utilities.CUI2vecSkip)
 		if err != nil {
 			return err
 		}
-		mw := metawrap.NewMetaMapClient(dsl.Utilities.MetaWrap)
-		RegisterRewriteTransformation("cui2vec_expansion", learning.Newcui2vecExpansionTransformer(vector, mapping, mw))
+		quickumls := quickumlsrest.NewClient(dsl.Utilities.QuickUMLSRest)
+		RegisterRewriteTransformation("cui2vec_expansion", learning.Newcui2vecExpansionTransformer(vector, mapping, quickumls))
 	}
 	return nil
 }

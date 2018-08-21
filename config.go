@@ -33,8 +33,6 @@ func RegisterSources(dsl Pipeline) error {
 			return err
 		}
 		RegisterStatisticSource(s, ss)
-	default:
-		return errors.New(fmt.Sprintf("could not load statistic source %s", s))
 	}
 
 	// Query sources.
@@ -110,16 +108,32 @@ func RegisterSources(dsl Pipeline) error {
 	if err != nil {
 		return err
 	}
-	// TODO add cui_expansion transformation.
 
 	// Machine learning models.
 	switch m := dsl.Learning.Model; m {
-	case "ltr_query_chain":
-		RegisterModel(m, learning.NewLearningToRankQueryChain(dsl.Learning.Options["model_file"]))
-	case "reinforcement_query_chain":
-		RegisterModel(m, learning.NewReinforcementQueryChain())
+	// For the case of query chains, we need to also configure the candidate selector.
+	case "query_chain":
+		var model *learning.QueryChain
+		switch cs := dsl.Learning.Options["candidate_selector"]; cs {
+		case "ltr_svmrank":
+			model = learning.NewSVMRankQueryChain(dsl.Learning.Options["model_file"])
+		case "ltr_quickrank":
+			if dsl.Learning.Train != nil {
+				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Train)
+			} else {
+				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Test)
+			}
+		case "reinforcement":
+			model = learning.NewReinforcementQueryChain()
+		}
+		if v, ok := dsl.Learning.Options["transformed_output"]; ok {
+			model.TransformedOutput = v
+		}
+		RegisterModel(m, model)
 	default:
-		return errors.New(fmt.Sprintf("could not load model of type %s", m))
+		if len(dsl.Learning.Model) > 0 {
+			return errors.New(fmt.Sprintf("could not load model of type %s", m))
+		}
 	}
 
 	return nil

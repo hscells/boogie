@@ -1,4 +1,4 @@
-// Boogie is a domain specific language (DSL) around groove.
+	// Boogie is a domain specific language (DSL) around groove.
 // For more information, see https://github.com/hscells/groove.
 package main
 
@@ -22,13 +22,12 @@ var (
 )
 
 type args struct {
-	Queries  string `arg:"help:Path to queries.,required"`
 	Pipeline string `arg:"help:Path to boogie pipeline.,required"`
 	LogFile  string `arg:"help:File to output logs to."`
 }
 
 func (args) Version() string {
-	return "boogie 28.Jul.2018"
+	return "boogie 21.Aug.2018"
 }
 
 func (args) Description() string {
@@ -75,7 +74,7 @@ func main() {
 
 	// Execute the groove pipeline. This is done in a go routine, and the results are sent back through the channel.
 	pipelineChannel := make(chan groove.PipelineResult)
-	go g.Execute(args.Queries, pipelineChannel)
+	go g.Execute(pipelineChannel)
 
 	evaluations := make([]string, len(dsl.Evaluations))
 
@@ -90,11 +89,7 @@ func main() {
 		defer trecEvalFile.Close()
 	}
 
-	for {
-		result := <-pipelineChannel
-		if result.Type == groove.Done {
-			break
-		}
+	for result := range pipelineChannel {
 		switch result.Type {
 		case groove.Measurement:
 			// Process the measurement outputs.

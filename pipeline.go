@@ -23,8 +23,9 @@ func CreatePipeline(dsl Pipeline) (pipeline.GroovePipeline, error) {
 
 	// Create a groove pipeline from the boogie dsl.
 	g := pipeline.GroovePipeline{}
+	g.QueryPath = dsl.Query.Path
 
-	if len(dsl.Query.Format) > 0 {
+	if len(dsl.Query.Path) > 0 {
 		if s, ok := querySourceMapping[dsl.Query.Format]; ok {
 			g.QueriesSource = s
 		} else {
@@ -160,9 +161,6 @@ func CreatePipeline(dsl Pipeline) (pipeline.GroovePipeline, error) {
 			if dsl.Learning.Test != nil {
 				g.ModelConfiguration.Test = true
 			}
-			if dsl.Learning.Validate != nil {
-				g.ModelConfiguration.Validate = true
-			}
 			if dsl.Learning.Generate != nil {
 				g.ModelConfiguration.Generate = true
 			}
@@ -171,14 +169,13 @@ func CreatePipeline(dsl Pipeline) (pipeline.GroovePipeline, error) {
 			switch m := g.Model.(type) {
 			case *learning.QueryChain:
 				m.QrelsFile = g.EvaluationFormatters.EvaluationQrels
-				m.GenerationDepth = 5
 				m.Evaluators = g.Evaluations
 				m.Measurements = g.Measurements
 				m.Transformations = transformations
 				m.StatisticsSource = g.StatisticsSource
 				m.QrelsFile = g.EvaluationFormatters.EvaluationQrels
 				if g.ModelConfiguration.Generate {
-					m.GeneartionFile = dsl.Learning.Generate["output"]
+					m.GenerationFile = dsl.Learning.Generate["output"].(string)
 				}
 			default:
 				return g, fmt.Errorf("unable to properly configure the learning model %s, see pipeline.go for more information", dsl.Learning.Model)

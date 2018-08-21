@@ -1,9 +1,14 @@
 *.json
 *.csv
+*.xml
+*.txt
 
 *.iml
 .idea/*
 
 boogie
+
+file_cache/
+statistics_cache/
 
 *.features

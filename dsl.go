@@ -17,10 +17,10 @@ type Pipeline struct {
 
 // PipelineUtilities is used to reference external tools or files.
 type PipelineUtilities struct {
-	MetaWrap    string `json:"metawrap"`
-	CUIMapping  string `json:"cui_mapping"`
-	CUI2vec     string `json:"cui2vec"`
-	CUI2vecSkip bool   `json:"cui2vec_skip_first"`
+	QuickUMLSRest string `json:"quickumls_rest"`
+	CUIMapping    string `json:"cui_mapping"`
+	CUI2vec       string `json:"cui2vec"`
+	CUI2vecSkip   bool   `json:"cui2vec_skip_first"`
 }
 
 // PipelineCache configures caching.
@@ -35,19 +35,18 @@ type PipelineCache struct {
 // The train, test, validate, and generate methods can be configured
 // via the options of the same names.
 type PipelineLearning struct {
-	Model    string            `json:"model"`
-	Options  map[string]string `json:"options"`
-	Train    map[string]string `json:"train"`
-	Test     map[string]string `json:"test"`
-	Validate map[string]string `json:"validate"`
-	Generate map[string]string `json:"generate"`
+	Model    string                 `json:"model"`
+	Options  map[string]string      `json:"options"`
+	Train    map[string]interface{} `json:"train"`
+	Test     map[string]interface{} `json:"test"`
+	Generate map[string]interface{} `json:"generate"`
 }
 
 // PipelineQuery represents a query source in the DSL.
 type PipelineQuery struct {
-	Format        string                 `json:"format"`
-	Options       map[string]interface{} `json:"options"`
-	SearchOptions map[string]interface{} `json:"search"`
+	Format  string                 `json:"format"`
+	Path    string                 `json:"path"`
+	Options map[string]interface{} `json:"options"`
 }
 
 // PipelineStatistic represents a statistic source in the DSL.
