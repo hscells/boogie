@@ -115,8 +115,6 @@ func RegisterSources(dsl Pipeline) error {
 	case "query_chain":
 		var model *learning.QueryChain
 		switch cs := dsl.Learning.Options["candidate_selector"]; cs {
-		case "ltr_svmrank":
-			model = learning.NewSVMRankQueryChain(dsl.Learning.Options["model_file"])
 		case "ltr_quickrank":
 			if dsl.Learning.Train != nil {
 				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Train)

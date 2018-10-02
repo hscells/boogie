@@ -2,6 +2,7 @@ package boogie
 
 import (
 	"bytes"
+	"github.com/hscells/cui2vec"
 	"github.com/hscells/groove/analysis"
 	"github.com/hscells/groove/combinator"
 	"github.com/hscells/groove/eval"
@@ -10,13 +11,13 @@ import (
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
 	"github.com/hscells/groove/stats"
+	"github.com/hscells/quickumlsrest"
 	"github.com/hscells/transmute/pipeline"
 	"github.com/hscells/trecresults"
 	"io/ioutil"
 	"log"
-	"github.com/hscells/cui2vec"
 	"os"
-	"github.com/hscells/quickumlsrest"
+	"strings"
 )
 
 var (
@@ -85,20 +86,35 @@ func RegisterRewriteTransformation(name string, transformation learning.Transfor
 
 func RegisterCui2VecTransformation(dsl Pipeline) error {
 	if len(dsl.Utilities.CUI2vec) > 0 && len(dsl.Utilities.CUIMapping) > 0 && len(dsl.Utilities.QuickUMLSRest) > 0 {
-		mapping, err := cui2vec.LoadCUIMapping(dsl.Utilities.CUIMapping)
-		if err != nil {
-			return err
-		}
+		var (
+			embeddings cui2vec.Embeddings
+			err        error
+		)
+
 		f, err := os.OpenFile(dsl.Utilities.CUI2vec, os.O_RDONLY, 0644)
 		if err != nil {
 			return err
 		}
-		vector, err := cui2vec.LoadModel(f, dsl.Utilities.CUI2vecSkip)
+
+		if strings.Contains(dsl.Utilities.CUI2vec, ".csv") {
+			embeddings, err = cui2vec.NewUncompressedEmbeddings(f, dsl.Utilities.CUI2vecSkip)
+			if err != nil {
+				return err
+			}
+		} else {
+			embeddings, err = cui2vec.NewPrecomputedEmbeddings(f)
+			if err != nil {
+				return err
+			}
+		}
+
+		mapping, err := cui2vec.LoadCUIMapping(dsl.Utilities.CUIMapping)
 		if err != nil {
 			return err
 		}
+
 		quickumls := quickumlsrest.NewClient(dsl.Utilities.QuickUMLSRest)
-		RegisterRewriteTransformation("cui2vec_expansion", learning.Newcui2vecExpansionTransformer(vector, mapping, quickumls))
+		RegisterRewriteTransformation("cui2vec_expansion", learning.Newcui2vecExpansionTransformer(embeddings, mapping, quickumls))
 	}
 	return nil
 }
