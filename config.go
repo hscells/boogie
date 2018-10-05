@@ -26,7 +26,8 @@ func RegisterSources(dsl Pipeline) error {
 		}
 		RegisterStatisticSource(s, ss)
 	case "terrier":
-		RegisterStatisticSource(s, NewTerrierStatisticsSource(dsl.Statistic.Options))
+		// TODO rework code to allow linux to use Terrier.
+		//RegisterStatisticSource(s, NewTerrierStatisticsSource(dsl.Statistic.Options))
 	case "entrez":
 		ss, err := NewEntrezStatisticsSource(dsl.Statistic.Options)
 		if err != nil {
