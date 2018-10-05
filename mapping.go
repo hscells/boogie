@@ -96,23 +96,27 @@ func RegisterCui2VecTransformation(dsl Pipeline) error {
 			return err
 		}
 
+		// First, load the embeddings file.
+		// If the file is a csv, then we can try loading it as such.
 		if strings.Contains(dsl.Utilities.CUI2vec, ".csv") {
 			embeddings, err = cui2vec.NewUncompressedEmbeddings(f, dsl.Utilities.CUI2vecSkip)
 			if err != nil {
 				return err
 			}
-		} else {
+		} else { // Otherwise, we assume the file is a binary file.
 			embeddings, err = cui2vec.NewPrecomputedEmbeddings(f)
 			if err != nil {
 				return err
 			}
 		}
 
+		// Secondly, load the file that will perform the mapping from CUI->string.
 		mapping, err := cui2vec.LoadCUIMapping(dsl.Utilities.CUIMapping)
 		if err != nil {
 			return err
 		}
 
+		// Finally, register a client that will communicate to the QuickUMLS REST API.
 		quickumls := quickumlsrest.NewClient(dsl.Utilities.QuickUMLSRest)
 		RegisterRewriteTransformation("cui2vec_expansion", learning.Newcui2vecExpansionTransformer(embeddings, mapping, quickumls))
 	}
@@ -166,42 +170,6 @@ func NewTransmuteQuerySource(p pipeline.TransmutePipeline, options map[string]in
 	}
 
 	return query.NewTransmuteQuerySource(p)
-}
-
-// NewTerrierStatisticsSource attempts to create a terrier statistics source.
-func NewTerrierStatisticsSource(config map[string]interface{}) *stats.TerrierStatisticsSource {
-	var propsFile string
-	field := "text"
-
-	if pf, ok := config["properties"]; ok {
-		propsFile = pf.(string)
-	}
-
-	if f, ok := config["field"]; ok {
-		field = f.(string)
-	}
-
-	var searchOptions stats.SearchOptions
-	if search, ok := config["search"].(map[string]interface{}); ok {
-		if size, ok := search["size"].(int); ok {
-			searchOptions.Size = size
-		} else {
-			searchOptions.Size = 1000
-		}
-
-		if runName, ok := search["run_name"].(string); ok {
-			searchOptions.RunName = runName
-		} else {
-			searchOptions.RunName = "run"
-		}
-	}
-
-	params := map[string]float64{"k": 10, "lambda": 0.5}
-	if p, ok := config["params"].(map[string]float64); ok {
-		params = p
-	}
-
-	return stats.NewTerrierStatisticsSource(stats.TerrierParameters(params), stats.TerrierField(field), stats.TerrierPropertiesPath(propsFile), stats.TerrierSearchOptions(searchOptions))
 }
 
 // NewElasticsearchStatisticsSource attempts to create an Elasticsearch statistics source from a configuration mapping.
