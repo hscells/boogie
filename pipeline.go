@@ -3,6 +3,7 @@ package boogie
 import (
 	"bytes"
 	"fmt"
+	"github.com/hscells/groove"
 	"github.com/hscells/groove/analysis"
 	"github.com/hscells/groove/eval"
 	"github.com/hscells/groove/learning"
@@ -14,15 +15,15 @@ import (
 )
 
 // CreatePipeline creates the main groove pipeline.
-func CreatePipeline(dsl Pipeline) (pipeline.GroovePipeline, error) {
+func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 	// Register the sources used in the groove pipeline.
 	err := RegisterSources(dsl)
 	if err != nil {
-		return pipeline.GroovePipeline{}, err
+		return groove.Pipeline{}, err
 	}
 
 	// Create a groove pipeline from the boogie dsl.
-	g := pipeline.GroovePipeline{}
+	g := groove.Pipeline{}
 	g.QueryPath = dsl.Query.Path
 
 	if len(dsl.Query.Path) > 0 {

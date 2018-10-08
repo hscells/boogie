@@ -1,6 +1,8 @@
 package boogie
 
 import (
+	"errors"
+	"fmt"
 	"github.com/hscells/groove/analysis"
 	"github.com/hscells/groove/analysis/postqpp"
 	"github.com/hscells/groove/analysis/preqpp"
@@ -9,8 +11,7 @@ import (
 	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
-	"fmt"
-	"errors"
+	"strconv"
 )
 
 // RegisterSources initiates boogie with all the possible options in a pipeline.
@@ -117,10 +118,21 @@ func RegisterSources(dsl Pipeline) error {
 		var model *learning.QueryChain
 		switch cs := dsl.Learning.Options["candidate_selector"]; cs {
 		case "ltr_quickrank":
+			var (
+				depth int
+				err   error
+			)
+			depth = 5
+			if v, ok := dsl.Learning.Options["chain_depth"]; ok {
+				depth, err = strconv.Atoi(v)
+				if err != nil {
+					return err
+				}
+			}
 			if dsl.Learning.Train != nil {
-				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Train)
+				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Train, learning.QuickRankCandidateSelectorMaxDepth(depth))
 			} else {
-				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Test)
+				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Test, learning.QuickRankCandidateSelectorMaxDepth(depth))
 			}
 		case "reinforcement":
 			model = learning.NewReinforcementQueryChain()
