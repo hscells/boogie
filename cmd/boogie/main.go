@@ -1,4 +1,4 @@
-	// Boogie is a domain specific language (DSL) around groove.
+// Boogie is a domain specific language (DSL) around groove.
 // For more information, see https://github.com/hscells/groove.
 package main
 
@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"github.com/alexflint/go-arg"
 	"github.com/hscells/boogie"
-	"github.com/hscells/groove"
+	"github.com/hscells/groove/pipeline"
 	"github.com/hscells/transmute/backend"
 	"io"
 	"io/ioutil"
@@ -73,7 +73,7 @@ func main() {
 	}
 
 	// Execute the groove pipeline. This is done in a go routine, and the results are sent back through the channel.
-	pipelineChannel := make(chan groove.PipelineResult)
+	pipelineChannel := make(chan pipeline.Result)
 	go g.Execute(pipelineChannel)
 
 	evaluations := make([]string, len(dsl.Evaluations))
@@ -91,7 +91,7 @@ func main() {
 
 	for result := range pipelineChannel {
 		switch result.Type {
-		case groove.Measurement:
+		case pipeline.Measurement:
 			// Process the measurement outputs.
 			for i, formatter := range dsl.Output.Measurements {
 				err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(result.Measurements[i]).Bytes(), 0644)
@@ -99,7 +99,7 @@ func main() {
 					log.Fatalln(err)
 				}
 			}
-		case groove.Transformation:
+		case pipeline.Transformation:
 			// Output the transformed queries
 			if len(dsl.Transformations.Output) > 0 {
 				s, err := backend.NewCQRQuery(result.Transformation.Transformation).StringPretty()
@@ -112,11 +112,11 @@ func main() {
 					log.Fatalln(err)
 				}
 			}
-		case groove.Evaluation:
+		case pipeline.Evaluation:
 			for i, e := range result.Evaluations {
 				evaluations[i] = e
 			}
-		case groove.TrecResult:
+		case pipeline.TrecResult:
 			if result.TrecResults != nil && len(*result.TrecResults) > 0 {
 				l := make([]string, len(*result.TrecResults))
 				for i, r := range *result.TrecResults {
@@ -125,7 +125,7 @@ func main() {
 				trecEvalFile.Write([]byte(strings.Join(l, "\n") + "\n"))
 				result.TrecResults = nil
 			}
-		case groove.Error:
+		case pipeline.Error:
 			if len(result.Topic) > 0 {
 				log.Printf("an error occurred in topic %v", result.Topic)
 			} else {

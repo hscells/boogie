@@ -8,7 +8,6 @@ import (
 	"github.com/hscells/groove/eval"
 	"github.com/hscells/groove/learning"
 	"github.com/hscells/groove/output"
-	"github.com/hscells/groove/pipeline"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/trecresults"
 	"io/ioutil"

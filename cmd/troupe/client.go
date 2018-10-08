@@ -186,7 +186,6 @@ func (j *Job) Run(e chan error) {
 		e <- err
 		return
 	}
-	defer session.Close()
 
 	stdout, err := session.StdoutPipe()
 	if err != nil {
@@ -271,6 +270,7 @@ func (j *Job) Run(e chan error) {
 		return
 	}
 
+	session.Close()
 	session, err = j.sshClient.NewSession()
 	if err != nil {
 		j.view.FgColor = gocui.ColorBlack
