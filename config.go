@@ -123,7 +123,7 @@ func RegisterSources(dsl Pipeline) error {
 				err   error
 			)
 			depth = 5
-			if v, ok := dsl.Learning.Options["chain_depth"]; ok {
+			if v, ok := dsl.Learning.Options["depth"]; ok {
 				depth, err = strconv.Atoi(v)
 				if err != nil {
 					return err
