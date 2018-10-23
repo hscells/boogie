@@ -71,15 +71,34 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 	}
 
 	g.Evaluations = []eval.Evaluator{}
+	N, err := g.StatisticsSource.CollectionSize()
+	if err != nil {
+		return g, err
+	}
 	for _, measurement := range dsl.Evaluations {
 		if m, ok := evaluationMapping[measurement]; ok {
 			// Here we configure wss directly with the N component (collection size).
 			if measurement == "wss" {
 				if _, ok := m.(eval.WorkSavedOverSampling); ok {
 					mm := m.(eval.WorkSavedOverSampling)
-					mm.N, err = g.StatisticsSource.CollectionSize()
-					if err != nil {
-						return g, err
+					mm.N = N
+					m = mm
+				}
+			} else if measurement == "residual_wss" {
+				if _, ok := m.(eval.ResidualEvaluator); ok {
+					mm := m.(eval.ResidualEvaluator)
+					if v, ok := mm.Evaluator.(eval.WorkSavedOverSampling); ok {
+						v.N = N
+						mm.Evaluator = v
+					}
+					m = mm
+				}
+			} else if measurement == "mle_wss" {
+				if _, ok := m.(eval.MaximumLikelihoodEvaluator); ok {
+					mm := m.(eval.MaximumLikelihoodEvaluator)
+					if v, ok := mm.Evaluator.(eval.WorkSavedOverSampling); ok {
+						v.N = N
+						mm.Evaluator = v
 					}
 					m = mm
 				}
