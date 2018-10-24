@@ -152,10 +152,10 @@ func RegisterSources(dsl Pipeline) error {
 		case "divdist":
 			if dsl.Learning.Train != nil {
 				modelName := dsl.Learning.Options["model_name"]
-				model = learning.NewDivDistQueryChain(learning.DivDistModelName(modelName), learning.DivDistTarget(2))
+				model = learning.NewDivDistQueryChain(learning.DivDistModelName(modelName))
 			} else {
 				modelName := dsl.Learning.Options["model_name"]
-				model = learning.NewDivDistQueryChain(learning.DivDistLoadModel(modelName), learning.DivDistTarget(2))
+				model = learning.NewDivDistQueryChain(learning.DivDistLoadModel(modelName))
 			}
 		}
 		if v, ok := dsl.Learning.Options["transformed_output"]; ok {
