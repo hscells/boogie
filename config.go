@@ -11,6 +11,7 @@ import (
 	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
+	"os"
 	"strconv"
 )
 
@@ -148,11 +149,34 @@ func RegisterSources(dsl Pipeline) error {
 			}
 		case "reinforcement":
 			model = learning.NewReinforcementQueryChain()
+		case "divdist":
+			if dsl.Learning.Train != nil {
+				modelName := dsl.Learning.Options["model_name"]
+				model = learning.NewDivDistQueryChain(learning.DivDistModelName(modelName), learning.DivDistTarget(2))
+			} else {
+				modelName := dsl.Learning.Options["model_name"]
+				model = learning.NewDivDistQueryChain(learning.DivDistLoadModel(modelName), learning.DivDistTarget(2))
+			}
 		}
 		if v, ok := dsl.Learning.Options["transformed_output"]; ok {
 			model.TransformedOutput = v
 		}
+
+		if v, ok := dsl.Learning.Options["features"]; ok {
+			fmt.Println("loading features")
+			f, err := os.Open(v)
+			if err != nil {
+				return err
+			}
+			model.LearntFeatures, err = learning.LoadFeatures(f)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("loaded %d features\n", len(model.LearntFeatures))
+		}
+
 		RegisterModel(m, model)
+
 	default:
 		if len(dsl.Learning.Model) > 0 {
 			return errors.New(fmt.Sprintf("could not load model of type %s", m))
