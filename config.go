@@ -129,19 +129,19 @@ func RegisterSources(dsl Pipeline) error {
 	// For the case of query chains, we need to also configure the candidate selector.
 	case "query_chain":
 		var model *learning.QueryChain
+		var (
+			depth int
+			err   error
+		)
+		depth = 5
+		if v, ok := dsl.Learning.Options["depth"]; ok {
+			depth, err = strconv.Atoi(v)
+			if err != nil {
+				return err
+			}
+		}
 		switch cs := dsl.Learning.Options["candidate_selector"]; cs {
 		case "ltr_quickrank":
-			var (
-				depth int
-				err   error
-			)
-			depth = 5
-			if v, ok := dsl.Learning.Options["depth"]; ok {
-				depth, err = strconv.Atoi(v)
-				if err != nil {
-					return err
-				}
-			}
 			if dsl.Learning.Train != nil {
 				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Train, learning.QuickRankCandidateSelectorMaxDepth(depth))
 			} else {
@@ -152,10 +152,10 @@ func RegisterSources(dsl Pipeline) error {
 		case "divdist":
 			if dsl.Learning.Train != nil {
 				modelName := dsl.Learning.Options["model_name"]
-				model = learning.NewDivDistQueryChain(learning.DivDistModelName(modelName))
+				model = learning.NewDivDistQueryChain(learning.DivDistModelName(modelName), learning.DivDistDepth(depth))
 			} else {
 				modelName := dsl.Learning.Options["model_name"]
-				model = learning.NewDivDistQueryChain(learning.DivDistLoadModel(modelName))
+				model = learning.NewDivDistQueryChain(learning.DivDistLoadModel(modelName), learning.DivDistDepth(depth))
 			}
 		}
 		if v, ok := dsl.Learning.Options["transformed_output"]; ok {
