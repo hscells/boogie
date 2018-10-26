@@ -149,7 +149,7 @@ func RegisterSources(dsl Pipeline) error {
 			}
 		case "reinforcement":
 			model = learning.NewReinforcementQueryChain()
-		case "divdist":
+		case "nearest":
 			if dsl.Learning.Train != nil {
 				modelName := dsl.Learning.Options["model_name"]
 				model = learning.NewDivDistQueryChain(learning.NearestNeighbourModelName(modelName), learning.NearestNeighbourDepth(depth))
