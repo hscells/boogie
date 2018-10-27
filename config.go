@@ -98,13 +98,13 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterEvaluator("residual_f05_measure", eval.NewResidualEvaluator(eval.F05Measure))
 	RegisterEvaluator("residual_f1_measure", eval.NewResidualEvaluator(eval.F1Measure))
 	RegisterEvaluator("residual_f3_measure", eval.NewResidualEvaluator(eval.F3Measure))
-	RegisterEvaluator("residual_wss_measure", eval.NewResidualEvaluator(eval.NewWSSEvaluator(0))) // The collection size is configured later.
+	RegisterEvaluator("residual_wss", eval.NewResidualEvaluator(eval.NewWSSEvaluator(0))) // The collection size is configured later.
 	RegisterEvaluator("mle_precision", eval.NewMaximumLikelihoodEvaluator(eval.PrecisionEvaluator))
 	RegisterEvaluator("mle_recall", eval.NewMaximumLikelihoodEvaluator(eval.RecallEvaluator))
 	RegisterEvaluator("mle_f05_measure", eval.NewMaximumLikelihoodEvaluator(eval.F05Measure))
 	RegisterEvaluator("mle_f1_measure", eval.NewMaximumLikelihoodEvaluator(eval.F1Measure))
 	RegisterEvaluator("mle_f3_measure", eval.NewMaximumLikelihoodEvaluator(eval.F3Measure))
-	RegisterEvaluator("mle_wss_measure", eval.NewMaximumLikelihoodEvaluator(eval.NewWSSEvaluator(0))) // The collection size is configured later.
+	RegisterEvaluator("mle_wss", eval.NewMaximumLikelihoodEvaluator(eval.NewWSSEvaluator(0))) // The collection size is configured later.
 
 	// Output formats.
 	RegisterMeasurementFormatter("json", output.JsonMeasurementFormatter)
