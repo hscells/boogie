@@ -143,7 +143,7 @@ func RegisterSources(dsl Pipeline) error {
 		switch cs := dsl.Learning.Options["candidate_selector"]; cs {
 		case "ltr_quickrank":
 			if dsl.Learning.Train != nil {
-				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Train, learning.QuickRankCandidateSelectorMaxDepth(depth))
+				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Train, learning.QuickRankCandidateSelectorMaxDepth(depth), learning.QuickRankCandidateSelectorStatisticsSource(statisticSourceMapping[dsl.Statistic.Source]))
 			} else {
 				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Test, learning.QuickRankCandidateSelectorMaxDepth(depth))
 			}
@@ -152,10 +152,10 @@ func RegisterSources(dsl Pipeline) error {
 		case "nearest":
 			if dsl.Learning.Train != nil {
 				modelName := dsl.Learning.Options["model_name"]
-				model = learning.NewDivDistQueryChain(learning.NearestNeighbourModelName(modelName), learning.NearestNeighbourDepth(depth))
+				model = learning.NewNearestNeighbourQueryChain(learning.NearestNeighbourModelName(modelName), learning.NearestNeighbourDepth(depth))
 			} else {
 				modelName := dsl.Learning.Options["model_name"]
-				model = learning.NewDivDistQueryChain(learning.NearestNeighbourLoadModel(modelName), learning.NearestNeighbourDepth(depth), learning.NearestNeighbourStatisticsSource(statisticSourceMapping[dsl.Statistic.Source]))
+				model = learning.NewNearestNeighbourQueryChain(learning.NearestNeighbourLoadModel(modelName), learning.NearestNeighbourDepth(depth), learning.NearestNeighbourStatisticsSource(statisticSourceMapping[dsl.Statistic.Source]))
 			}
 		}
 		if v, ok := dsl.Learning.Options["transformed_output"]; ok {
