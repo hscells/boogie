@@ -143,9 +143,9 @@ func RegisterSources(dsl Pipeline) error {
 		switch cs := dsl.Learning.Options["candidate_selector"]; cs {
 		case "ltr_quickrank":
 			if dsl.Learning.Train != nil {
-				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Train, learning.QuickRankCandidateSelectorMaxDepth(depth), learning.QuickRankCandidateSelectorStatisticsSource(statisticSourceMapping[dsl.Statistic.Source]))
+				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Train, learning.QuickRankCandidateSelectorMaxDepth(depth))
 			} else {
-				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Test, learning.QuickRankCandidateSelectorMaxDepth(depth))
+				model = learning.NewQuickRankQueryChain(dsl.Learning.Options["binary"], dsl.Learning.Test, learning.QuickRankCandidateSelectorMaxDepth(depth), learning.QuickRankCandidateSelectorStatisticsSource(statisticSourceMapping[dsl.Statistic.Source]))
 			}
 		case "reinforcement":
 			model = learning.NewReinforcementQueryChain()
