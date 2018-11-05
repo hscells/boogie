@@ -1,6 +1,7 @@
 package boogie
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/hscells/groove/analysis"
@@ -11,6 +12,8 @@ import (
 	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
+	"github.com/hscells/trecresults"
+	"io/ioutil"
 	"os"
 	"strconv"
 )
@@ -165,6 +168,17 @@ func RegisterSources(dsl Pipeline) error {
 				modelName := dsl.Learning.Options["model_name"]
 				model = learning.NewNearestNeighbourQueryChain(learning.NearestNeighbourLoadModel(modelName), learning.NearestNeighbourDepth(depth), learning.NearestNeighbourStatisticsSource(statisticSourceMapping[dsl.Statistic.Source]))
 			}
+		case "oracle":
+			b, err := ioutil.ReadFile(dsl.Output.Evaluations.Qrels)
+			if err != nil {
+				return err
+			}
+			qrels, err := trecresults.QrelsFromReader(bytes.NewReader(b))
+			if err != nil {
+				return err
+			}
+
+			model = learning.NewRankOracleCandidateSelector(statisticSourceMapping[dsl.Statistic.Source], qrels, evaluationMapping[dsl.Learning.Options["measure"]], depth)
 		}
 		if v, ok := dsl.Learning.Options["transformed_output"]; ok {
 			model.TransformedOutput = v
