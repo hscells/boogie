@@ -177,8 +177,6 @@ func RegisterSources(dsl Pipeline) error {
 			if err != nil {
 				return err
 			}
-			fmt.Println(dsl.Learning.Options["measure"])
-			fmt.Println(evaluationMapping[dsl.Learning.Options["measure"]].Name())
 			model = learning.NewRankOracleCandidateSelector(statisticSourceMapping[dsl.Statistic.Source], qrels, evaluationMapping[dsl.Learning.Options["measure"]], depth)
 		}
 		if v, ok := dsl.Learning.Options["transformed_output"]; ok {
