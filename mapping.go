@@ -11,7 +11,6 @@ import (
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
 	"github.com/hscells/groove/stats"
-	"github.com/hscells/quickumlsrest"
 	"github.com/hscells/transmute/pipeline"
 	"github.com/hscells/trecresults"
 	"io/ioutil"
@@ -117,8 +116,8 @@ func RegisterCui2VecTransformation(dsl Pipeline) error {
 		}
 
 		// Finally, register a client that will communicate to the QuickUMLS REST API.
-		quickumls := quickumlsrest.NewClient(dsl.Utilities.QuickUMLSRest)
-		RegisterRewriteTransformation("cui2vec_expansion", learning.Newcui2vecExpansionTransformer(embeddings, mapping, quickumls))
+		//quickumls := quickumlsrest.NewClient(dsl.Utilities.QuickUMLSRest)
+		RegisterRewriteTransformation("cui2vec_expansion", learning.Newcui2vecExpansionTransformer(embeddings, mapping))
 	}
 	return nil
 }
