@@ -80,7 +80,7 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterMeasurement("boolean_keywords", analysis.BooleanKeywords)
 	RegisterMeasurement("boolean_fields", analysis.BooleanFields)
 	RegisterMeasurement("boolean_truncated", analysis.BooleanTruncated)
-	RegisterMeasurement("boolean_atomicnonatomic", analysis.BooleanAtomicNonAtomic)
+	RegisterMeasurement("boolean_atomicnonatomic", analysis.BooleanNonAtomicClauses)
 	RegisterMeasurement("boolean_fields_abstract", analysis.BooleanFieldsAbstract)
 	RegisterMeasurement("boolean_fields_title", analysis.BooleanFieldsTitle)
 	RegisterMeasurement("boolean_fields_mesh", analysis.BooleanFieldsMeSH)

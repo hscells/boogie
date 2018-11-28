@@ -2,6 +2,7 @@ package boogie
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/hscells/groove"
 	"github.com/hscells/groove/analysis"
@@ -203,6 +204,60 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				m.QrelsFile = g.EvaluationFormatters.EvaluationQrels
 				if g.ModelConfiguration.Generate {
 					m.GenerationFile = dsl.Learning.Generate["output"].(string)
+					if s, ok := dsl.Learning.Generate["sampler"].(string); ok {
+						var (
+							n       int
+							delta   float64
+							measure string
+						)
+						if v, ok := dsl.Learning.Generate["n"].(int); ok {
+							n = v
+						}
+						if v, ok := dsl.Learning.Generate["delta"].(float64); ok {
+							delta = v
+						}
+						if v, ok := dsl.Learning.Generate["measure"].(string); ok {
+							measure = v
+						}
+						if n == 0 || delta == 0 {
+							return groove.Pipeline{}, errors.New("either n or delta are not configured for sampling (cannot be 0 values)")
+						}
+						switch s {
+						case "greedy":
+							if len(measure) == 0 {
+								return groove.Pipeline{}, errors.New("mis-configured measure for greedy sampler")
+							}
+							var e eval.Evaluator
+							if m, ok := evaluationMapping[measure]; ok {
+								e = m
+							} else {
+								return groove.Pipeline{}, fmt.Errorf("%s is not a valid evaluation measure for sampling", measure)
+							}
+							m.Sampler = learning.NewGreedySampler(n, delta, e, g.EvaluationFormatters.EvaluationQrels, g.QueryCache, g.StatisticsSource)
+							break
+						case "evaluation":
+							if len(measure) == 0 {
+								return groove.Pipeline{}, errors.New("mis-configured measure for evaluation sampler")
+							}
+							var e eval.Evaluator
+							if m, ok := evaluationMapping[measure]; ok {
+								e = m
+							} else {
+								return groove.Pipeline{}, fmt.Errorf("%s is not a valid evaluation measure for sampling", measure)
+							}
+							m.Sampler = learning.NewEvaluationSampler(n, delta, e, g.EvaluationFormatters.EvaluationQrels, g.QueryCache, g.StatisticsSource)
+							break
+						case "transformation":
+							m.Sampler = learning.NewTransformationSampler(n, delta)
+							break
+						case "random":
+							m.Sampler = learning.NewRandomSampler(n, delta)
+						default:
+							return groove.Pipeline{}, fmt.Errorf("%s is not a valid sampler", s)
+						}
+					} else {
+						return groove.Pipeline{}, fmt.Errorf("ensure that a sampler is configured when generating data")
+					}
 				}
 			default:
 				return g, fmt.Errorf("unable to properly configure the learning model %s, see pipeline.go for more information", dsl.Learning.Model)
