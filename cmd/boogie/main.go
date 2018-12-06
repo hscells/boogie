@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/alexflint/go-arg"
+	"github.com/go-errors/errors"
 	"github.com/hscells/boogie"
 	"github.com/hscells/groove/pipeline"
 	"github.com/hscells/transmute/backend"
@@ -131,7 +132,7 @@ func main() {
 			} else {
 				log.Println("an error occurred")
 			}
-			panic(err)
+			log.Fatalln(errors.Wrap(err, 0).ErrorStack())
 			return
 		}
 	}
