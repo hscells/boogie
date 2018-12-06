@@ -132,7 +132,8 @@ func main() {
 			} else {
 				log.Println("an error occurred")
 			}
-			log.Fatalln(errors.Wrap(err, 0).ErrorStack())
+			log.Println(errors.Wrap(result.Error, 0).ErrorStack())
+			panic(result.Error)
 			return
 		}
 	}
