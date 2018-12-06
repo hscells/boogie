@@ -96,7 +96,7 @@ func main() {
 			for i, formatter := range dsl.Output.Measurements {
 				err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(result.Measurements[i]).Bytes(), 0644)
 				if err != nil {
-					log.Fatalln(err)
+					panic(err)
 				}
 			}
 		case pipeline.Transformation:
@@ -104,12 +104,12 @@ func main() {
 			if len(dsl.Transformations.Output) > 0 {
 				s, err := backend.NewCQRQuery(result.Transformation.Transformation).StringPretty()
 				if err != nil {
-					log.Fatalln(err)
+					panic(err)
 				}
 				q := bytes.NewBufferString(s).Bytes()
 				err = ioutil.WriteFile(filepath.Join(g.Transformations.Output, result.Transformation.Name), q, 0644)
 				if err != nil {
-					log.Fatalln(err)
+					panic(err)
 				}
 			}
 		case pipeline.Evaluation:
@@ -131,7 +131,7 @@ func main() {
 			} else {
 				log.Println("an error occurred")
 			}
-			log.Fatalln(result.Error)
+			panic(err)
 			return
 		}
 	}
@@ -140,7 +140,9 @@ func main() {
 	for i, formatter := range dsl.Output.Evaluations.Measurements {
 		err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(evaluations[i]).Bytes(), 0644)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
+
+	log.Println("completed pipeline")
 }
