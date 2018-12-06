@@ -44,6 +44,7 @@ func RegisterSources(dsl Pipeline) error {
 	// Query sources.
 	RegisterQuerySource("medline", NewTransmuteQuerySource(query.MedlineTransmutePipeline, dsl.Query.Options))
 	RegisterQuerySource("pubmed", NewTransmuteQuerySource(query.PubMedTransmutePipeline, dsl.Query.Options))
+	RegisterQuerySource("cqr", NewTransmuteQuerySource(query.CQRTransmutePipeline, dsl.Query.Options))
 	RegisterQuerySource("keyword", NewKeywordQuerySource(dsl.Query.Options))
 	RegisterQuerySource("protocol", query.NewProtocolQuerySource())
 
