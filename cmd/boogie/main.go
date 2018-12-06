@@ -48,7 +48,7 @@ func main() {
 		defer f.Close()
 		f.Truncate(0)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 		mw := io.MultiWriter(os.Stdout, f)
 		log.SetOutput(mw)
@@ -57,19 +57,19 @@ func main() {
 	// Read the contents of the dsl file.
 	b, err := ioutil.ReadFile(args.Pipeline)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	// Parse the dsl file into a struct.
 	err = json.Unmarshal(b, &dsl)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	// Create the main pipeline.
 	g, err := boogie.CreatePipeline(dsl)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	// Execute the groove pipeline. This is done in a go routine, and the results are sent back through the channel.
@@ -82,7 +82,7 @@ func main() {
 	if len(dsl.Output.Trec.Output) > 0 {
 		trecEvalFile, err = os.OpenFile(dsl.Output.Trec.Output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			log.Fatalln(err)
+			panic(err)
 		}
 		trecEvalFile.Truncate(0)
 		trecEvalFile.Seek(0, 0)
@@ -96,7 +96,7 @@ func main() {
 			for i, formatter := range dsl.Output.Measurements {
 				err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(result.Measurements[i]).Bytes(), 0644)
 				if err != nil {
-					log.Fatalln(err)
+					panic(err)
 				}
 			}
 		case pipeline.Transformation:
@@ -104,12 +104,12 @@ func main() {
 			if len(dsl.Transformations.Output) > 0 {
 				s, err := backend.NewCQRQuery(result.Transformation.Transformation).StringPretty()
 				if err != nil {
-					log.Fatalln(err)
+					panic(err)
 				}
 				q := bytes.NewBufferString(s).Bytes()
 				err = ioutil.WriteFile(filepath.Join(g.Transformations.Output, result.Transformation.Name), q, 0644)
 				if err != nil {
-					log.Fatalln(err)
+					panic(err)
 				}
 			}
 		case pipeline.Evaluation:
@@ -131,7 +131,7 @@ func main() {
 			} else {
 				log.Println("an error occurred")
 			}
-			log.Fatalln(result.Error)
+			panic(result.Error)
 			return
 		}
 	}
@@ -140,7 +140,7 @@ func main() {
 	for i, formatter := range dsl.Output.Evaluations.Measurements {
 		err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(evaluations[i]).Bytes(), 0644)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
