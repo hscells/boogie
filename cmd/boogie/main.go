@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/alexflint/go-arg"
-	"github.com/go-errors/errors"
 	"github.com/hscells/boogie"
 	"github.com/hscells/groove/pipeline"
 	"github.com/hscells/transmute/backend"
@@ -97,7 +96,7 @@ func main() {
 			for i, formatter := range dsl.Output.Measurements {
 				err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(result.Measurements[i]).Bytes(), 0644)
 				if err != nil {
-					panic(err)
+					log.Fatalln(err)
 				}
 			}
 		case pipeline.Transformation:
@@ -105,12 +104,12 @@ func main() {
 			if len(dsl.Transformations.Output) > 0 {
 				s, err := backend.NewCQRQuery(result.Transformation.Transformation).StringPretty()
 				if err != nil {
-					panic(err)
+					log.Fatalln(err)
 				}
 				q := bytes.NewBufferString(s).Bytes()
 				err = ioutil.WriteFile(filepath.Join(g.Transformations.Output, result.Transformation.Name), q, 0644)
 				if err != nil {
-					panic(err)
+					log.Fatalln(err)
 				}
 			}
 		case pipeline.Evaluation:
@@ -132,8 +131,7 @@ func main() {
 			} else {
 				log.Println("an error occurred")
 			}
-			log.Println(errors.Wrap(result.Error, 0).ErrorStack())
-			panic(result.Error)
+			log.Fatalln(result.Error)
 			return
 		}
 	}
@@ -142,9 +140,7 @@ func main() {
 	for i, formatter := range dsl.Output.Evaluations.Measurements {
 		err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(evaluations[i]).Bytes(), 0644)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 	}
-
-	log.Println("completed pipeline")
 }
