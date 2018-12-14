@@ -17,10 +17,10 @@ type Pipeline struct {
 
 // PipelineUtilities is used to reference external tools or files.
 type PipelineUtilities struct {
-	QuickUMLSRest string `json:"quickumls_rest"`
-	CUIMapping    string `json:"cui_mapping"`
-	CUI2vec       string `json:"cui2vec"`
-	CUI2vecSkip   bool   `json:"cui2vec_skip_first"`
+	QuickUMLSCache string `json:"quickumls_cache"`
+	CUIMapping     string `json:"cui_mapping"`
+	CUI2vec        string `json:"cui2vec"`
+	CUI2vecSkip    bool   `json:"cui2vec_skip_first"`
 }
 
 // PipelineCache configures caching.

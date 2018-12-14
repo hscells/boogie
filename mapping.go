@@ -2,6 +2,7 @@ package boogie
 
 import (
 	"bytes"
+	"encoding/gob"
 	"github.com/hscells/cui2vec"
 	"github.com/hscells/groove/analysis"
 	"github.com/hscells/groove/combinator"
@@ -11,6 +12,7 @@ import (
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
 	"github.com/hscells/groove/stats"
+	"github.com/hscells/quickumlsrest"
 	"github.com/hscells/transmute/pipeline"
 	"github.com/hscells/trecresults"
 	"io/ioutil"
@@ -84,7 +86,7 @@ func RegisterRewriteTransformation(name string, transformation learning.Transfor
 }
 
 func RegisterCui2VecTransformation(dsl Pipeline) error {
-	if len(dsl.Utilities.CUI2vec) > 0 && len(dsl.Utilities.CUIMapping) > 0 && len(dsl.Utilities.QuickUMLSRest) > 0 {
+	if len(dsl.Utilities.CUI2vec) > 0 && len(dsl.Utilities.CUIMapping) > 0 && len(dsl.Utilities.QuickUMLSCache) > 0 {
 		var (
 			embeddings cui2vec.Embeddings
 			err        error
@@ -115,9 +117,20 @@ func RegisterCui2VecTransformation(dsl Pipeline) error {
 			return err
 		}
 
+		// Lastly, load the file that contains cached cui similarity mappings.
+		f, err = os.OpenFile(dsl.Utilities.QuickUMLSCache, os.O_RDONLY, os.ModePerm)
+		if err != nil {
+			return err
+		}
+		var cache quickumlsrest.Cache
+		err = gob.NewDecoder(f).Decode(&cache)
+		if err != nil {
+			return err
+		}
+
 		// Finally, register a client that will communicate to the QuickUMLS REST API.
 		//quickumls := quickumlsrest.NewClient(dsl.Utilities.QuickUMLSRest)
-		RegisterRewriteTransformation("cui2vec_expansion", learning.Newcui2vecExpansionTransformer(embeddings, mapping))
+		RegisterRewriteTransformation("cui2vec_expansion", learning.Newcui2vecExpansionTransformer(embeddings, mapping, cache))
 	}
 	return nil
 }
