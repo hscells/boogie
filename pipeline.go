@@ -213,8 +213,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 							delta   float64
 							measure string
 						)
-						if v, ok := dsl.Learning.Generate["n"].(int); ok {
-							n = v
+						if v, ok := dsl.Learning.Generate["n"]; ok {
+							n = int(v.(float64))
 						}
 						if v, ok := dsl.Learning.Generate["delta"].(float64); ok {
 							delta = v
@@ -223,7 +223,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 							measure = v
 						}
 						if n == 0 || delta == 0 {
-							return groove.Pipeline{}, errors.New("either n or delta are not configured for sampling (cannot be 0 values)")
+							return groove.Pipeline{}, errors.New("neither n or delta are configured for sampling (cannot be 0 values)")
 						}
 						switch s {
 						case "greedy":
