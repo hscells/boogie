@@ -2,8 +2,10 @@ package boogie
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hscells/cui2vec"
 	"github.com/hscells/groove"
 	"github.com/hscells/groove/analysis"
 	"github.com/hscells/groove/eval"
@@ -12,6 +14,7 @@ import (
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/trecresults"
 	"io/ioutil"
+	"os"
 )
 
 // CreatePipeline creates the main groove pipeline.
@@ -227,31 +230,130 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 							if len(measure) == 0 {
 								return groove.Pipeline{}, errors.New("mis-configured measure for greedy sampler")
 							}
-							var e eval.Evaluator
+							var (
+								e        eval.Evaluator
+								strategy learning.GreedyStrategy
+								scores   map[string]float64
+							)
+
+							// Configure the evaluation measure used in sampling.
 							if m, ok := evaluationMapping[measure]; ok {
 								e = m
 							} else {
 								return groove.Pipeline{}, fmt.Errorf("%s is not a valid evaluation measure for sampling", measure)
 							}
-							m.Sampler = learning.NewGreedySampler(n, delta, e, g.EvaluationFormatters.EvaluationQrels, g.QueryCache, g.StatisticsSource)
+
+							// Configure loading of the scores for sampling.
+							if v, ok := dsl.Learning.Generate["scores"]; ok {
+								path := v.(string)
+								f, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
+								if err != nil {
+									return groove.Pipeline{}, err
+								}
+								b, err := ioutil.ReadAll(f)
+								if err != nil {
+									return groove.Pipeline{}, err
+								}
+								json.Unmarshal(b, &scores)
+							}
+
+							// Configure the sampling strategy.
+							if v, ok := dsl.Learning.Generate["strategy"]; ok {
+								switch v.(string) {
+								case "naive":
+									strategy = learning.RankedGreedyStrategy
+								case "diversified":
+									strategy = learning.MaximalMarginalRelevanceGreedyStrategy(scores, 0.3, cui2vec.Cosine)
+								}
+							} else {
+								return groove.Pipeline{}, fmt.Errorf("unknown greedy sampling strategy %v", v)
+							}
+
+							m.Sampler = learning.NewGreedySampler(n, delta, e, g.EvaluationFormatters.EvaluationQrels, g.QueryCache, g.StatisticsSource, strategy)
 							break
 						case "evaluation":
 							if len(measure) == 0 {
 								return groove.Pipeline{}, errors.New("mis-configured measure for evaluation sampler")
 							}
-							var e eval.Evaluator
+							var (
+								e        eval.Evaluator
+								strategy learning.ScoredStrategy
+								scores   map[string]float64
+							)
+
+							// Configure the evaluation measure used in sampling.
 							if m, ok := evaluationMapping[measure]; ok {
 								e = m
 							} else {
 								return groove.Pipeline{}, fmt.Errorf("%s is not a valid evaluation measure for sampling", measure)
 							}
-							m.Sampler = learning.NewEvaluationSampler(n, delta, e, g.EvaluationFormatters.EvaluationQrels, g.QueryCache, g.StatisticsSource)
+
+							// Configure the sampling strategy.
+							if v, ok := dsl.Learning.Generate["strategy"]; ok {
+								switch v.(string) {
+								case "positive_biased":
+									strategy = learning.PositiveBiasScoredStrategy
+								case "negative_biased":
+									strategy = learning.NegativeBiasScoredStrategy
+								case "balanced":
+									strategy = learning.BalancedScoredStrategy
+								case "stratified":
+									strategy = learning.StratifiedScoredStrategy
+								case "diversified":
+									strategy = learning.MaximalMarginalRelevanceScoredStrategy(0.3, cui2vec.Cosine)
+								}
+							} else {
+								return groove.Pipeline{}, fmt.Errorf("unknown evaluation sampling strategy %v", v)
+							}
+
+							// Configure loading of the scores for sampling.
+							if v, ok := dsl.Learning.Generate["scores"]; ok {
+								path := v.(string)
+								f, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
+								if err != nil {
+									return groove.Pipeline{}, err
+								}
+								b, err := ioutil.ReadAll(f)
+								if err != nil {
+									return groove.Pipeline{}, err
+								}
+								json.Unmarshal(b, &scores)
+							}
+
+							m.Sampler = learning.NewEvaluationSampler(n, delta, e, g.EvaluationFormatters.EvaluationQrels, g.QueryCache, g.StatisticsSource, scores, strategy)
 							break
 						case "transformation":
-							m.Sampler = learning.NewTransformationSampler(n, delta)
+							var strategy learning.TransformationStrategy
+
+							// Configure the sampling strategy.
+							if v, ok := dsl.Learning.Generate["strategy"]; ok {
+								switch v.(string) {
+								case "stratified":
+									strategy = learning.StratifiedTransformationStrategy
+								case "balanced":
+									strategy = learning.BalancedTransformationStrategy
+								}
+							} else {
+								return groove.Pipeline{}, fmt.Errorf("unknown transformation sampling strategy %v", v)
+							}
+
+							m.Sampler = learning.NewTransformationSampler(n, delta, strategy)
 							break
 						case "random":
 							m.Sampler = learning.NewRandomSampler(n, delta)
+						case "cluster":
+							var k int
+							// Configure the evaluation measure used in sampling.
+							if v, ok := dsl.Learning.Generate["k"]; ok {
+								k, ok = v.(int)
+								if !ok {
+									return groove.Pipeline{}, fmt.Errorf("%s is not an integer for k", v)
+								}
+							} else {
+								return groove.Pipeline{}, fmt.Errorf("%s is not a valid value for k", v)
+							}
+
+							m.Sampler = learning.NewClusterSampler(n, delta, k)
 						default:
 							return groove.Pipeline{}, fmt.Errorf("%s is not a valid sampler", s)
 						}
