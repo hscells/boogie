@@ -210,7 +210,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 
 					traversal := dsl.Learning.Generate["traversal"].(string)
 					if traversal == "depth_first" {
-						m.GenerationExplorer = learning.NewDepthFirstExplorer(m.StatisticsSource, m.MeasurementExecutor, m.Measurements, m.Transformations, learning.ProbabalisticDepthStoppingCriteria(0.8), learning.StratifiedTransformationSamplingCriteria(learning.ChainFeatures))
+						m.GenerationExplorer = learning.NewDepthFirstExplorer(m, learning.ProbabalisticDepthStoppingCriteria(0.8), learning.StratifiedTransformationSamplingCriteria(learning.ChainFeatures))
 					} else if traversal == "breadth_first" {
 						var (
 							n       int
@@ -367,7 +367,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 							return groove.Pipeline{}, fmt.Errorf("ensure that a sampler is configured when generating data")
 						}
 
-						m.GenerationExplorer = learning.NewBreadthFirstExplorer(m.StatisticsSource, m.MeasurementExecutor, m.Measurements, m.Transformations, sampler, learning.DepthStoppingCondition)
+						m.GenerationExplorer = learning.NewBreadthFirstExplorer(m, sampler, learning.DepthStoppingCondition)
 					}
 				}
 			default:
