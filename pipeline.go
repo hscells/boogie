@@ -367,7 +367,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 							return groove.Pipeline{}, fmt.Errorf("ensure that a sampler is configured when generating data")
 						}
 
-						m.GenerationExplorer = learning.NewBreadthFirstExplorer(m, sampler, learning.DepthStoppingCondition)
+						m.GenerationExplorer = learning.NewBreadthFirstExplorer(m, sampler, learning.DepthStoppingCondition(5))
 					}
 				}
 			default:
