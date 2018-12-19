@@ -354,7 +354,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 								if v, ok := dsl.Learning.Generate["k"].(float64); ok {
 									k = int(k)
 								} else {
-									return groove.Pipeline{}, fmt.Errorf("%s is not a valid value for k", v)
+									return groove.Pipeline{}, fmt.Errorf("%v is not a valid value for k", v)
 								}
 
 								sampler = learning.NewClusterSampler(n, delta, k)
