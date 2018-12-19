@@ -210,7 +210,11 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 
 					traversal := dsl.Learning.Generate["traversal"].(string)
 					if traversal == "depth_first" {
-						m.GenerationExplorer = learning.NewDepthFirstExplorer(m, learning.ProbabalisticDepthStoppingCriteria(0.8), learning.StratifiedTransformationSamplingCriteria(learning.ChainFeatures))
+						var budget int
+						if v, ok := dsl.Learning.Generate["budget"]; ok {
+							budget = int(v.(float64))
+						}
+						m.GenerationExplorer = learning.NewDepthFirstExplorer(m, learning.BalancedTransformationSamplingCriteria(learning.ChainFeatures), budget)
 					} else if traversal == "breadth_first" {
 						var (
 							n       int
@@ -347,11 +351,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 							case "cluster":
 								var k int
 								// Configure the evaluation measure used in sampling.
-								if v, ok := dsl.Learning.Generate["k"]; ok {
-									k, ok = v.(int)
-									if !ok {
-										return groove.Pipeline{}, fmt.Errorf("%s is not an integer for k", v)
-									}
+								if v, ok := dsl.Learning.Generate["k"].(float64); ok {
+									k = int(k)
 								} else {
 									return groove.Pipeline{}, fmt.Errorf("%s is not a valid value for k", v)
 								}
