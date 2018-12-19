@@ -276,7 +276,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 									return groove.Pipeline{}, fmt.Errorf("unknown greedy sampling strategy %v", v)
 								}
 
-								sampler = learning.NewGreedySampler(n, delta, e, g.EvaluationFormatters.EvaluationQrels, g.QueryCache, g.StatisticsSource, strategy)
+								sampler = learning.NewGreedySampler(n, delta, e, m, strategy)
 								break
 							case "evaluation":
 								if len(measure) == 0 {
@@ -327,7 +327,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 									json.Unmarshal(b, &scores)
 								}
 
-								sampler = learning.NewEvaluationSampler(n, delta, e, g.EvaluationFormatters.EvaluationQrels, g.QueryCache, g.StatisticsSource, scores, strategy)
+								sampler = learning.NewEvaluationSampler(n, delta, e, m, scores, strategy)
 								break
 							case "transformation":
 								var strategy learning.TransformationStrategy
