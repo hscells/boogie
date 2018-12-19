@@ -262,6 +262,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 										return groove.Pipeline{}, err
 									}
 									json.Unmarshal(b, &scores)
+								} else {
+									return groove.Pipeline{}, errors.New("no scores parameter defined")
 								}
 
 								// Configure the sampling strategy.
@@ -325,6 +327,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 										return groove.Pipeline{}, err
 									}
 									json.Unmarshal(b, &scores)
+								} else {
+									return groove.Pipeline{}, errors.New("no scores parameter defined")
 								}
 
 								sampler = learning.NewEvaluationSampler(n, delta, e, m, scores, strategy)
