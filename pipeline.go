@@ -240,7 +240,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 								var (
 									e        eval.Evaluator
 									strategy learning.GreedyStrategy
-									scores   map[string]float64
+									scores   map[string]map[string]float64
 								)
 
 								// Configure the evaluation measure used in sampling.
@@ -261,7 +261,10 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 									if err != nil {
 										return groove.Pipeline{}, err
 									}
-									json.Unmarshal(b, &scores)
+									err = json.Unmarshal(b, &scores)
+									if err != nil {
+										return groove.Pipeline{}, err
+									}
 								} else {
 									return groove.Pipeline{}, errors.New("no scores parameter defined")
 								}
@@ -272,7 +275,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 									case "naive":
 										strategy = learning.RankedGreedyStrategy
 									case "diversified":
-										strategy = learning.MaximalMarginalRelevanceGreedyStrategy(scores, 0.3, cui2vec.Cosine)
+										strategy = learning.MaximalMarginalRelevanceGreedyStrategy(scores, 0.3, cui2vec.Cosine, e)
 									}
 								} else {
 									return groove.Pipeline{}, fmt.Errorf("unknown greedy sampling strategy %v", v)
@@ -287,7 +290,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 								var (
 									e        eval.Evaluator
 									strategy learning.ScoredStrategy
-									scores   map[string]float64
+									scores   map[string]map[string]float64
 								)
 
 								// Configure the evaluation measure used in sampling.
@@ -326,7 +329,10 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 									if err != nil {
 										return groove.Pipeline{}, err
 									}
-									json.Unmarshal(b, &scores)
+									err = json.Unmarshal(b, &scores)
+									if err != nil {
+										return groove.Pipeline{}, err
+									}
 								} else {
 									return groove.Pipeline{}, errors.New("no scores parameter defined")
 								}
