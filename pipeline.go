@@ -210,11 +210,84 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 
 					traversal := dsl.Learning.Generate["traversal"].(string)
 					if traversal == "depth_first" {
-						var budget int
+						var (
+							measure string
+							sampler learning.DepthFirstSamplingCriteria
+							budget  int
+						)
 						if v, ok := dsl.Learning.Generate["budget"]; ok {
 							budget = int(v.(float64))
 						}
-						m.GenerationExplorer = learning.NewDepthFirstExplorer(m, learning.BalancedTransformationSamplingCriteria(learning.ChainFeatures), budget)
+
+						if s, ok := dsl.Learning.Generate["sampler"].(string); ok {
+							if v, ok := dsl.Learning.Generate["measure"].(string); ok {
+								measure = v
+							}
+							switch s {
+							case "evaluation":
+								var (
+									e      eval.Evaluator
+									scores map[string]map[string]float64
+								)
+
+								// Configure the evaluation measure used in sampling.
+								if m, ok := evaluationMapping[measure]; ok {
+									e = m
+								} else {
+									return groove.Pipeline{}, fmt.Errorf("%s is not a valid evaluation measure for sampling", measure)
+								}
+
+								// Configure loading of the scores for sampling.
+								if v, ok := dsl.Learning.Generate["scores"]; ok {
+									path := v.(string)
+									f, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
+									if err != nil {
+										return groove.Pipeline{}, err
+									}
+									b, err := ioutil.ReadAll(f)
+									if err != nil {
+										return groove.Pipeline{}, err
+									}
+									err = json.Unmarshal(b, &scores)
+									if err != nil {
+										return groove.Pipeline{}, err
+									}
+								} else {
+									return groove.Pipeline{}, errors.New("no scores parameter defined")
+								}
+
+								// Configure the sampling strategy.
+								if v, ok := dsl.Learning.Generate["strategy"]; ok {
+									switch v.(string) {
+									case "positive":
+										sampler = learning.PositiveBiasedEvaluationSamplingCriteria(e, scores, m)
+									case "negative":
+										sampler = learning.NegativeBiasedEvaluationSamplingCriteria(e, scores, m)
+									case "balanced":
+										sampler = learning.BalancedEvaluationSamplingCriteria(e, scores, m)
+									}
+								} else {
+									return groove.Pipeline{}, fmt.Errorf("unknown greedy sampling strategy %v", v)
+								}
+							case "transformation":
+								// Configure the sampling strategy.
+								if v, ok := dsl.Learning.Generate["strategy"]; ok {
+									switch v.(string) {
+									case "balanced":
+										sampler = learning.BalancedTransformationSamplingCriteria(learning.ChainFeatures)
+									case "biased":
+										sampler = learning.BiasedTransformationSamplingCriteria()
+									}
+								} else {
+									return groove.Pipeline{}, fmt.Errorf("unknown greedy sampling strategy %v", v)
+								}
+							case "random":
+								sampler = learning.ProbabilisticSamplingCriteria(0.2)
+							}
+						} else {
+							return groove.Pipeline{}, fmt.Errorf("ensure that a sampler is configured when generating data")
+						}
+						m.GenerationExplorer = learning.NewDepthFirstExplorer(m, sampler, budget)
 					} else if traversal == "breadth_first" {
 						var (
 							n       int
