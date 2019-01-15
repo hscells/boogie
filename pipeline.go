@@ -282,7 +282,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 									return groove.Pipeline{}, fmt.Errorf("unknown greedy sampling strategy %v", v)
 								}
 							case "random":
-								sampler = learning.ProbabilisticSamplingCriteria(0.2)
+								sampler = learning.ProbabilisticSamplingCriteria(0.65)
 							}
 						} else {
 							return groove.Pipeline{}, fmt.Errorf("ensure that a sampler is configured when generating data")
