@@ -4,7 +4,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"github.com/alexflint/go-arg"
 	"github.com/hscells/boogie"
 	"github.com/hscells/groove/eval"
@@ -16,10 +15,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-)
-
-var (
-	dsl boogie.Pipeline
 )
 
 type args struct {
@@ -62,10 +57,7 @@ func main() {
 	}
 
 	// Parse the dsl file into a struct.
-	err = json.Unmarshal(b, &dsl)
-	if err != nil {
-		panic(err)
-	}
+	dsl, err := boogie.Template(bytes.NewBuffer(b))
 
 	// Create the main pipeline.
 	g, err := boogie.CreatePipeline(dsl)
