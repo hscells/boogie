@@ -70,8 +70,9 @@ type MeasurementOutput struct {
 
 // EvaluationOutput represents an output format for measurements.
 type EvaluationOutput struct {
-	Qrels        string                   `json:"qrels"`
-	Measurements []EvaluationOutputFormat `json:"formats"`
+	Qrels          string                   `json:"qrels"`
+	RelevanceGrade int64                    `json:"grade"`
+	Measurements   []EvaluationOutputFormat `json:"formats"`
 }
 
 // EvaluationOutputFormat represents how evaluations should be output.

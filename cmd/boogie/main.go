@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"github.com/alexflint/go-arg"
 	"github.com/hscells/boogie"
+	"github.com/hscells/groove/eval"
 	"github.com/hscells/groove/pipeline"
 	"github.com/hscells/transmute/backend"
 	"io"
@@ -27,7 +28,7 @@ type args struct {
 }
 
 func (args) Version() string {
-	return "boogie 21.Aug.2018"
+	return "boogie 16.Jan.2019"
 }
 
 func (args) Description() string {
@@ -72,6 +73,7 @@ func main() {
 		panic(err)
 	}
 
+	eval.RelevanceGrade = dsl.Output.Evaluations.RelevanceGrade
 	// Execute the groove pipeline. This is done in a go routine, and the results are sent back through the channel.
 	pipelineChannel := make(chan pipeline.Result)
 	go g.Execute(pipelineChannel)
