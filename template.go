@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"strconv"
 	"strings"
 )
 
-func Template(r io.Reader) (Pipeline, error) {
+func Template(r io.Reader, args ...string) (Pipeline, error) {
 	s := bufio.NewScanner(r)
 	templates := make(map[string]string)
 	parsing := false
@@ -28,11 +29,22 @@ func Template(r io.Reader) (Pipeline, error) {
 			command := strings.Split(line, " ")
 			if len(command) == 3 {
 				if command[0] == "template" {
-					b, err := ioutil.ReadFile(command[2])
-					if err != nil {
-						return p, err
+					if len(command[2]) > 0 && command[2][0] == '$' {
+						index, err := strconv.Atoi(command[2][1:])
+						if err != nil {
+							return p, err
+						}
+						if index >= len(args) {
+							return p, fmt.Errorf("index of template argument is higher than the number of arguments, see line %d", pc)
+						}
+						templates[command[1]] = args[index]
+					} else {
+						b, err := ioutil.ReadFile(command[2])
+						if err != nil {
+							return p, err
+						}
+						templates[command[1]] = string(b)
 					}
-					templates[command[1]] = string(b)
 				} else {
 					return p, fmt.Errorf("unrecognised templating command '%s' on line %d", command[0], pc)
 				}

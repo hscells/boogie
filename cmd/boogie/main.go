@@ -18,8 +18,9 @@ import (
 )
 
 type args struct {
-	Pipeline string `arg:"help:Path to boogie pipeline.,required"`
-	LogFile  string `arg:"help:File to output logs to."`
+	Pipeline     string   `arg:"help:Path to boogie pipeline.,required"`
+	LogFile      string   `arg:"help:File to output logs to."`
+	TemplateArgs []string `arg:"help:Additional arguments to pass to template file."`
 }
 
 func (args) Version() string {
@@ -57,7 +58,7 @@ func main() {
 	}
 
 	// Parse the dsl file into a struct.
-	dsl, err := boogie.Template(bytes.NewBuffer(b))
+	dsl, err := boogie.Template(bytes.NewBuffer(b), args.TemplateArgs...)
 
 	// Create the main pipeline.
 	g, err := boogie.CreatePipeline(dsl)
