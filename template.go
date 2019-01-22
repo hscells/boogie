@@ -2,6 +2,7 @@ package boogie
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -20,7 +21,8 @@ func templateString(r io.Reader, args ...string) (string, error) {
 		pc++
 		line := s.Text()
 		if len(line) > 0 {
-			if strings.TrimSpace(line)[0] == '{' {
+			x := strings.TrimSpace(line)[0]
+			if x == '{' || x == '"' {
 				parsing = true
 			}
 		}
@@ -42,9 +44,17 @@ func templateString(r io.Reader, args ...string) (string, error) {
 						if err != nil {
 							return buff, err
 						}
-						templates[command[1]] = string(b)
+						templates[command[1]], err = templateString(bytes.NewBuffer(b), args...)
+						if err != nil {
+
+							return buff, err
+						}
 					}
 				} else {
+					fmt.Println("------------")
+					fmt.Println(">>>", line)
+					fmt.Println("------------")
+					fmt.Println(buff)
 					return buff, fmt.Errorf("unrecognised templating command '%s' on line %d", command[0], pc)
 				}
 			}
