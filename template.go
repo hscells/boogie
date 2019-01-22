@@ -2,11 +2,10 @@ package boogie
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -22,7 +21,7 @@ func templateString(r io.Reader, args ...string) (string, error) {
 		line := s.Text()
 		if len(line) > 0 {
 			x := strings.TrimSpace(line)[0]
-			if x == '{' || x == '"' {
+			if x == '{' || x == '"' || x == '%' {
 				parsing = true
 			}
 		}
@@ -40,15 +39,22 @@ func templateString(r io.Reader, args ...string) (string, error) {
 						}
 						templates[command[1]] = args[index]
 					} else {
-						b, err := ioutil.ReadFile(command[2])
+						f, err := os.OpenFile(command[2], os.O_RDONLY, 0644)
 						if err != nil {
 							return buff, err
 						}
-						templates[command[1]], err = templateString(bytes.NewBuffer(b), args...)
+						templates[command[1]], err = templateString(f, args...)
 						if err != nil {
-
 							return buff, err
 						}
+						//b, err := ioutil.ReadFile(command[2])
+						//if err != nil {
+						//	return buff, err
+						//}
+						//templates[command[1]] = string(b)
+						//if err != nil {
+						//	return buff, err
+						//}
 					}
 				} else {
 					fmt.Println("------------")
