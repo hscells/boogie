@@ -10,12 +10,11 @@ import (
 	"strings"
 )
 
-func Template(r io.Reader, args ...string) (Pipeline, error) {
+func templateString(r io.Reader, args ...string) (string, error) {
 	s := bufio.NewScanner(r)
 	templates := make(map[string]string)
 	parsing := false
 	pc := 0
-	var p Pipeline
 	var buff string
 	for s.Scan() {
 		pc++
@@ -32,21 +31,21 @@ func Template(r io.Reader, args ...string) (Pipeline, error) {
 					if len(command[2]) > 0 && command[2][0] == '$' {
 						index, err := strconv.Atoi(command[2][1:])
 						if err != nil {
-							return p, err
+							return buff, err
 						}
 						if index >= len(args) {
-							return p, fmt.Errorf("index of template argument is higher than the number of arguments, see line %d", pc)
+							return buff, fmt.Errorf("index of template argument is higher than the number of arguments, see line %d", pc)
 						}
 						templates[command[1]] = args[index]
 					} else {
 						b, err := ioutil.ReadFile(command[2])
 						if err != nil {
-							return p, err
+							return buff, err
 						}
 						templates[command[1]] = string(b)
 					}
 				} else {
-					return p, fmt.Errorf("unrecognised templating command '%s' on line %d", command[0], pc)
+					return buff, fmt.Errorf("unrecognised templating command '%s' on line %d", command[0], pc)
 				}
 			}
 		} else {
@@ -59,7 +58,15 @@ func Template(r io.Reader, args ...string) (Pipeline, error) {
 			buff += fmt.Sprintln(line)
 		}
 	}
+	return buff, nil
+}
 
-	err := json.Unmarshal([]byte(buff), &p)
+func Template(r io.Reader, args ...string) (Pipeline, error) {
+	var p Pipeline
+	t, err := templateString(r, args...)
+	if err != nil {
+		return p, err
+	}
+	err = json.Unmarshal([]byte(t), &p)
 	return p, err
 }
