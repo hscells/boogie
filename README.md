@@ -60,14 +60,14 @@ The boogie DSL looks like a regular JSON file (although JSON is notoriously bad 
     "path": "path/to/queries"
   },
   "statistic": {
-    "source": "elasticsearch"
+    "source": "elasticsearch",
     ...
   },
   "evaluations": [
     "precision",
     "recall",
     "f1"
-  ]
+  ],
   "output": {
     "evaluations": {
       "qrels": "medline.qrels",
@@ -84,6 +84,26 @@ The boogie DSL looks like a regular JSON file (although JSON is notoriously bad 
   }
 }
 ```
+
+### Templates
+
+The DSL files can include template arguments to prevent repeating yourself. Anything can be templated by the `template` keyword at the top of the file. The syntax of templating is as follows:
+
+```
+template stats stats.btmpl.json
+template path $0
+{
+    %stats,
+    "query": {
+        "format": "medline",
+        "path": "%path",
+    }
+}
+```
+
+In this example, the file `stats.btmpl.json` contains the section of DSL that will be templated  in and `$0` refers to the first command line argument to be passed in.
+
+## Configuration Items
 
 There are currently 11 different top-level configuration items that may or may not integrate with each other. I have tried my best to describe each of these items and how they can interact with each other.
 
