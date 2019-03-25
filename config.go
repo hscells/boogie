@@ -97,8 +97,8 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterMeasurement("mesh_max_depth", analysis.MeshMaxDepth)
 
 	// Evaluations measurements.
-	RegisterEvaluator("precision", eval.PrecisionEvaluator)
-	RegisterEvaluator("recall", eval.RecallEvaluator)
+	RegisterEvaluator("precision", eval.Precision)
+	RegisterEvaluator("recall", eval.Recall)
 	RegisterEvaluator("num_rel", eval.NumRel)
 	RegisterEvaluator("num_ret", eval.NumRet)
 	RegisterEvaluator("num_rel_ret", eval.NumRelRet)
@@ -106,14 +106,14 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterEvaluator("f1_measure", eval.F1Measure)
 	RegisterEvaluator("f3_measure", eval.F3Measure)
 	RegisterEvaluator("wss", eval.NewWSSEvaluator(0)) // The collection size is configured later.
-	RegisterEvaluator("residual_precision", eval.NewResidualEvaluator(eval.PrecisionEvaluator))
-	RegisterEvaluator("residual_recall", eval.NewResidualEvaluator(eval.RecallEvaluator))
+	RegisterEvaluator("residual_precision", eval.NewResidualEvaluator(eval.Precision))
+	RegisterEvaluator("residual_recall", eval.NewResidualEvaluator(eval.Recall))
 	RegisterEvaluator("residual_f05_measure", eval.NewResidualEvaluator(eval.F05Measure))
 	RegisterEvaluator("residual_f1_measure", eval.NewResidualEvaluator(eval.F1Measure))
 	RegisterEvaluator("residual_f3_measure", eval.NewResidualEvaluator(eval.F3Measure))
 	RegisterEvaluator("residual_wss", eval.NewResidualEvaluator(eval.NewWSSEvaluator(0))) // The collection size is configured later.
-	RegisterEvaluator("mle_precision", eval.NewMaximumLikelihoodEvaluator(eval.PrecisionEvaluator))
-	RegisterEvaluator("mle_recall", eval.NewMaximumLikelihoodEvaluator(eval.RecallEvaluator))
+	RegisterEvaluator("mle_precision", eval.NewMaximumLikelihoodEvaluator(eval.Precision))
+	RegisterEvaluator("mle_recall", eval.NewMaximumLikelihoodEvaluator(eval.Recall))
 	RegisterEvaluator("mle_f05_measure", eval.NewMaximumLikelihoodEvaluator(eval.F05Measure))
 	RegisterEvaluator("mle_f1_measure", eval.NewMaximumLikelihoodEvaluator(eval.F1Measure))
 	RegisterEvaluator("mle_f3_measure", eval.NewMaximumLikelihoodEvaluator(eval.F3Measure))

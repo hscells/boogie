@@ -5,13 +5,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hscells/cqr"
 	"github.com/hscells/cui2vec"
 	"github.com/hscells/groove"
 	"github.com/hscells/groove/analysis"
 	"github.com/hscells/groove/eval"
+	"github.com/hscells/groove/formulation"
 	"github.com/hscells/groove/learning"
 	"github.com/hscells/groove/output"
+	"github.com/hscells/groove/pipeline"
 	"github.com/hscells/groove/preprocess"
+	"github.com/hscells/groove/query"
+	"github.com/hscells/groove/stats"
+	"github.com/hscells/guru"
+	"github.com/hscells/metawrap"
 	"github.com/hscells/trecresults"
 	"io/ioutil"
 	"os"
@@ -456,6 +463,168 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			}
 		} else {
 			return g, fmt.Errorf("%s is not a known learning model", dsl.Learning.Model)
+		}
+	}
+
+	// Configure the query formulation method.
+	if len(dsl.Formulation.Method) > 0 {
+		if dsl.Formulation.Method == "conceptual" {
+
+			title := dsl.Formulation.Options["title"]
+			topic := dsl.Formulation.Options["topic"]
+
+			var (
+				composer   formulation.LogicComposer
+				extractor  formulation.EntityExtractor
+				expander   formulation.EntityExpander
+				mapper     formulation.KeywordMapper
+				processing []formulation.PostProcess
+			)
+
+			switch dsl.Formulation.Options["logic_composer"] {
+			case "nlp":
+				composer = formulation.NewNLPLogicComposer(dsl.Formulation.Options["logic_composer.classpath"])
+			}
+
+			switch dsl.Formulation.Options["entity_extractor"] {
+			case "metamap":
+				extractor = formulation.NewMetaMapEntityExtractor(metawrap.HTTPClient{URL: dsl.Formulation.Options["metamap_url"]})
+			}
+
+			switch dsl.Formulation.Options["entity_expander"] {
+			case "cui2vec":
+				f, err := os.OpenFile(dsl.Formulation.Options["entity_expander.cui2vec_precomputed_embeddings"], os.O_RDONLY, 0664)
+				if err != nil {
+					return g, err
+				}
+				e, err := cui2vec.NewPrecomputedEmbeddings(f)
+				if err != nil {
+					return g, err
+				}
+				err = f.Close()
+				if err != nil {
+					return g, err
+				}
+				expander = formulation.NewCui2VecEntityExpander(*e)
+			}
+
+			switch dsl.Formulation.Options["keyword_mapper"] {
+			case "metamap":
+				var m formulation.MetaMapMapper
+				switch dsl.Formulation.Options["keyword_mapper.mapper"] {
+				case "matched":
+					m = formulation.Matched()
+				case "preferred":
+					client, err := guru.NewUMLSClient(dsl.Formulation.Options["keyword_mapper.mapper.umls_username"], dsl.Formulation.Options["keyword_mapper.mapper.umls_password"])
+					if err != nil {
+						return g, err
+					}
+					m = formulation.Preferred(client)
+				case "frequent":
+					c, err := cui2vec.LoadCUIMapping(dsl.Formulation.Options["keyword_mapper.mapper.cui2vec_frequent_mapping"])
+					if err != nil {
+						return g, err
+					}
+					m = formulation.Frequent(c)
+				case "alias":
+					c, err := cui2vec.LoadCUIAliasMapping(dsl.Formulation.Options["keyword_mapper.mapper.cui2vec_alias_mapping"])
+					if err != nil {
+						return g, err
+					}
+					m = formulation.Alias(c)
+				}
+				mapper = formulation.NewMetaMapKeywordMapper(metawrap.HTTPClient{URL: dsl.Formulation.Options["metamap_url"]}, m)
+			}
+
+			for _, pp := range dsl.Formulation.PostProcessing {
+				switch pp {
+				case "stem":
+					// Find the original query so as to stem it.
+					queries, err := query.TARTask2QueriesSource{}.Load(dsl.Formulation.Options["post_processing.tar_topics_path"])
+					if err != nil {
+						return g, err
+					}
+					var original cqr.CommonQueryRepresentation
+					for _, q := range queries {
+						if q.Topic == topic {
+							original = q.Query
+						}
+					}
+					processing = append(processing, formulation.Stem(original))
+				}
+			}
+
+			g.QueryFormulator = formulation.NewConceptualFormulator(title, topic, composer, extractor, expander, mapper, processing...)
+		} else if dsl.Formulation.Method == "objective" {
+
+			topic := dsl.Formulation.Options["topic"]
+			folder := dsl.Formulation.Options["folder"]
+			pubdates := dsl.Formulation.Options["pubdates"]
+			semtypes := dsl.Formulation.Options["semtypes"]
+			metamap := dsl.Formulation.Options["metamap"]
+
+			// Find the original query so as to stem it.
+			queries, err := query.TARTask2QueriesSource{}.Load(dsl.Formulation.Options["tar_topics_path"])
+			if err != nil {
+				return g, err
+			}
+			var input pipeline.Query
+			for _, q := range queries {
+				if q.Topic == topic {
+					input = q
+				}
+			}
+
+			var (
+				processing []formulation.PostProcess
+				population formulation.BackgroundCollection
+				analyser   formulation.TermAnalyser
+				splitter   formulation.Splitter
+			)
+
+			switch dsl.Formulation.Options["analyser"] {
+			case "term_frequency":
+				analyser = formulation.TermFrequencyAnalyser
+			}
+
+			switch dsl.Formulation.Options["background_collection"] {
+			case "pubmed":
+				population = formulation.PubMedSet{}
+			case "top10000":
+				population, err = formulation.GetPopulationSet(g.StatisticsSource.(stats.EntrezStatisticsSource), analyser)
+				if err != nil {
+					return g, err
+				}
+			}
+
+			switch dsl.Formulation.Options["splitter"] {
+			case "random":
+				splitter = formulation.RandomSplitter(1000)
+			}
+
+			for _, pp := range dsl.Formulation.PostProcessing {
+				switch pp {
+				case "stem":
+					// Find the original query so as to stem it.
+					queries, err := query.TARTask2QueriesSource{}.Load(dsl.Formulation.Options["post_processing.tar_topics_path"])
+					if err != nil {
+						return g, err
+					}
+					var original cqr.CommonQueryRepresentation
+					for _, q := range queries {
+						if q.Topic == topic {
+							original = q.Query
+						}
+					}
+					processing = append(processing, formulation.Stem(original))
+				}
+			}
+			qrels := g.EvaluationFormatters.EvaluationQrels.Qrels
+			g.QueryFormulator = formulation.NewObjectiveFormulator(input, g.StatisticsSource.(stats.EntrezStatisticsSource), qrels[topic], population, folder, pubdates, semtypes, metamap,
+				formulation.ObjectiveAnalyser(analyser),
+				formulation.ObjectiveSplitter(splitter))
+		} else {
+			return g, fmt.Errorf("no such query formulation method: %s", dsl.Formulation.Method)
 		}
 	}
 

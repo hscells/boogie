@@ -4,7 +4,9 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/alexflint/go-arg"
+	"github.com/go-errors/errors"
 	"github.com/hscells/boogie"
 	"github.com/hscells/groove/eval"
 	"github.com/hscells/groove/pipeline"
@@ -20,7 +22,7 @@ import (
 type args struct {
 	Pipeline     string   `arg:"help:Path to boogie pipeline.,required"`
 	LogFile      string   `arg:"help:File to output logs to."`
-	TemplateArgs []string `arg:"help:Additional arguments to pass to template file."`
+	TemplateArgs []string `arg:"help:Additional arguments to pass to template file.,positional"`
 }
 
 func (args) Version() string {
@@ -126,6 +128,7 @@ func main() {
 			} else {
 				log.Println("an error occurred")
 			}
+			fmt.Println(errors.Wrap(result.Error, 1).ErrorStack())
 			panic(result.Error)
 			return
 		}

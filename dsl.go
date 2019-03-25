@@ -9,6 +9,7 @@ type Pipeline struct {
 	Measurements    []string               `json:"measurements"`
 	Evaluations     []string               `json:"evaluation"`
 	Transformations PipelineTransformation `json:"transformations"`
+	Formulation     PipelineFormulation    `json:"formulation"`
 	Learning        PipelineLearning       `json:"learning"`
 	Rewrite         []string               `json:"rewrite"`
 	Output          PipelineOutput         `json:"output"`
@@ -90,4 +91,11 @@ type TrecOutput struct {
 type PipelineTransformation struct {
 	Output     string   `json:"output"`
 	Operations []string `json:"operations"`
+}
+
+// PipelineFormulation represents how queries can be formulated.
+type PipelineFormulation struct {
+	Method         string            `json:"method"`
+	Options        map[string]string `json:"options"`
+	PostProcessing []string          `json:"post_processing"`
 }
