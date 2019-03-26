@@ -506,6 +506,12 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 					return g, err
 				}
 				expander = formulation.NewCui2VecEntityExpander(*e)
+			case "medgen":
+				e, err := NewEntrezStatisticsSource(dsl.Statistic.Options, stats.EntrezDb("medgen"))
+				if err != nil {
+					return g, err
+				}
+				expander = formulation.NewMedGenExpander(e)
 			}
 
 			switch dsl.Formulation.Options["keyword_mapper"] {
@@ -532,6 +538,9 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 						return g, err
 					}
 					m = formulation.Alias(c)
+				}
+				if len(dsl.Formulation.Options["keyword_mapper.add_mesh"]) > 0 {
+					m = formulation.MeSHMapper(m)
 				}
 				mapper = formulation.NewMetaMapKeywordMapper(metawrap.HTTPClient{URL: dsl.Formulation.Options["metamap_url"]}, m)
 			}

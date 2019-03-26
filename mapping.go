@@ -241,7 +241,7 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) (*stats.Ela
 		stats.ElasticsearchScroll(scroll))
 }
 
-func NewEntrezStatisticsSource(config map[string]interface{}) (stats.EntrezStatisticsSource, error) {
+func NewEntrezStatisticsSource(config map[string]interface{}, options ...func(source *stats.EntrezStatisticsSource)) (stats.EntrezStatisticsSource, error) {
 	var tool, email, key string
 
 	if d, ok := config["tool"]; ok {
@@ -271,9 +271,18 @@ func NewEntrezStatisticsSource(config map[string]interface{}) (stats.EntrezStati
 		}
 	}
 
-	return stats.NewEntrezStatisticsSource(
+	e, err := stats.NewEntrezStatisticsSource(
 		stats.EntrezAPIKey(key),
 		stats.EntrezEmail(email),
 		stats.EntrezTool(tool),
 		stats.EntrezOptions(searchOptions))
+	if err != nil {
+		return e, nil
+	}
+
+	for _, option := range options {
+		option(&e)
+	}
+
+	return e, nil
 }
