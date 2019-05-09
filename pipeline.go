@@ -22,6 +22,7 @@ import (
 	"github.com/hscells/trecresults"
 	"io/ioutil"
 	"os"
+	"strconv"
 )
 
 // CreatePipeline creates the main groove pipeline.
@@ -31,6 +32,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 	if err != nil {
 		return groove.Pipeline{}, err
 	}
+
+	eval.RelevanceGrade = dsl.Output.Evaluations.RelevanceGrade
 
 	// Create a groove pipeline from the boogie dsl.
 	g := groove.Pipeline{}
@@ -211,7 +214,6 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				m.Measurements = g.Measurements
 				m.Transformations = transformations
 				m.StatisticsSource = g.StatisticsSource
-				m.QrelsFile = g.EvaluationFormatters.EvaluationQrels
 				if g.ModelConfiguration.Generate {
 					m.GenerationFile = dsl.Learning.Generate["output"].(string)
 
@@ -468,8 +470,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 
 	// Configure the query formulation method.
 	if len(dsl.Formulation.Method) > 0 {
-		if dsl.Formulation.Method == "conceptual" {
-
+		switch dsl.Formulation.Method {
+		case "conceptual":
 			title := dsl.Formulation.Options["title"]
 			topic := dsl.Formulation.Options["topic"]
 
@@ -564,8 +566,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			}
 
 			g.QueryFormulator = formulation.NewConceptualFormulator(title, topic, composer, extractor, expander, mapper, processing...)
-		} else if dsl.Formulation.Method == "objective" {
-
+		case "objective":
 			topic := dsl.Formulation.Options["topic"]
 			folder := dsl.Formulation.Options["folder"]
 			pubdates := dsl.Formulation.Options["pubdates"]
@@ -632,7 +633,57 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			g.QueryFormulator = formulation.NewObjectiveFormulator(input, g.StatisticsSource.(stats.EntrezStatisticsSource), qrels[topic], population, folder, pubdates, semtypes, metamap,
 				formulation.ObjectiveAnalyser(analyser),
 				formulation.ObjectiveSplitter(splitter))
-		} else {
+		case "dt":
+			qrels := g.EvaluationFormatters.EvaluationQrels.Qrels
+			topic := dsl.Formulation.Options["topic"]
+			if qrels == nil {
+				return g, errors.New("qrels file has not been specified for dt formulator")
+			}
+
+			var p, n []int
+			for _, line := range qrels[topic] {
+				id, err := strconv.Atoi(line.DocId)
+				if err != nil {
+					return g, err
+				}
+				fmt.Println(line.Score, eval.RelevanceGrade)
+				if line.Score > eval.RelevanceGrade {
+					p = append(p, id)
+				} else {
+					n = append(n, id)
+				}
+			}
+
+			e, ok := g.StatisticsSource.(stats.EntrezStatisticsSource)
+			if !ok {
+				return g, errors.New("the entrez statistics source must be configured to use the dt formulator")
+			}
+
+			fmt.Println(len(p), len(n))
+
+			pos, err := e.Fetch(p)
+			if err != nil {
+				return g, err
+			}
+
+			var neg guru.MedlineDocuments
+			if len(n) > 0 {
+				neg, err = e.Fetch(n)
+				if err != nil {
+					return g, err
+				}
+			} else {
+				neg = make(guru.MedlineDocuments, 0)
+			}
+
+			fmt.Println(len(pos), len(neg))
+
+			g.QueryFormulator, err = formulation.NewDecisionTreeFormulator(topic, pos, neg)
+			if err != nil {
+				return g, err
+			}
+
+		default:
 			return g, fmt.Errorf("no such query formulation method: %s", dsl.Formulation.Method)
 		}
 	}

@@ -63,6 +63,7 @@ func RegisterSources(dsl Pipeline) error {
 
 	// Measurement sources.
 	RegisterMeasurement("term_count", analysis.TermCount)
+	RegisterMeasurement("tf", preqpp.TF{})
 	RegisterMeasurement("sum_idf", preqpp.SumIDF)
 	RegisterMeasurement("avg_idf", preqpp.AvgIDF)
 	RegisterMeasurement("max_idf", preqpp.MaxIDF)
@@ -70,6 +71,7 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterMeasurement("avg_ictf", preqpp.AvgICTF)
 	RegisterMeasurement("query_scope", preqpp.QueryScope)
 	RegisterMeasurement("scs", preqpp.SimplifiedClarityScore)
+	RegisterMeasurement("scq", preqpp.SCQ{})
 	RegisterMeasurement("sum_cqs", preqpp.SummedCollectionQuerySimilarity)
 	RegisterMeasurement("max_cqs", preqpp.MaxCollectionQuerySimilarity)
 	RegisterMeasurement("avg_cqs", preqpp.AverageCollectionQuerySimilarity)
