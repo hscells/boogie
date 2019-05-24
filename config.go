@@ -54,6 +54,7 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterPreprocessor("strip_numbers", preprocess.StripNumbers)
 
 	// Transformations.
+	RegisterTransformationBoolean("date_restrictions", preprocess.DateRestrictions(dsl.PreprocessOptions["date_restrictions.file"]))
 	RegisterTransformationBoolean("simplify", preprocess.Simplify)
 	RegisterTransformationBoolean("and_simplify", preprocess.AndSimplify)
 	RegisterTransformationBoolean("or_simplify", preprocess.OrSimplify)

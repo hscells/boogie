@@ -2,18 +2,19 @@ package boogie
 
 // Pipeline is a representation of the DSL.
 type Pipeline struct {
-	Query           PipelineQuery          `json:"query"`
-	Statistic       PipelineStatistic      `json:"statistic"`
-	Utilities       PipelineUtilities      `json:"utilities"`
-	Preprocess      []string               `json:"preprocess"`
-	Measurements    []string               `json:"measurements"`
-	Evaluations     []string               `json:"evaluation"`
-	Transformations PipelineTransformation `json:"transformations"`
-	Formulation     PipelineFormulation    `json:"formulation"`
-	Learning        PipelineLearning       `json:"learning"`
-	Rewrite         []string               `json:"rewrite"`
-	Output          PipelineOutput         `json:"output"`
-	Cache           []PipelineCache        `json:"cache"`
+	Query             PipelineQuery          `json:"query"`
+	Statistic         PipelineStatistic      `json:"statistic"`
+	Utilities         PipelineUtilities      `json:"utilities"`
+	Preprocess        []string               `json:"preprocess"`
+	PreprocessOptions map[string]string      `json:"preprocess_options"`
+	Measurements      []string               `json:"measurements"`
+	Evaluations       []string               `json:"evaluation"`
+	Transformations   PipelineTransformation `json:"transformations"`
+	Formulation       PipelineFormulation    `json:"formulation"`
+	Learning          PipelineLearning       `json:"learning"`
+	Rewrite           []string               `json:"rewrite"`
+	Output            PipelineOutput         `json:"output"`
+	Cache             []PipelineCache        `json:"cache"`
 }
 
 // PipelineUtilities is used to reference external tools or files.

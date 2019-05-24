@@ -100,7 +100,7 @@ func RegisterCui2VecTransformation(dsl Pipeline) error {
 		// First, load the embeddings file.
 		// If the file is a csv, then we can try loading it as such.
 		if strings.Contains(dsl.Utilities.CUI2vec, ".csv") {
-			embeddings, err = cui2vec.NewUncompressedEmbeddings(f, dsl.Utilities.CUI2vecSkip)
+			embeddings, err = cui2vec.NewUncompressedEmbeddings(f, dsl.Utilities.CUI2vecSkip, ',')
 			if err != nil {
 				return err
 			}
@@ -242,7 +242,10 @@ func NewElasticsearchStatisticsSource(config map[string]interface{}) (*stats.Ela
 }
 
 func NewEntrezStatisticsSource(config map[string]interface{}, options ...func(source *stats.EntrezStatisticsSource)) (stats.EntrezStatisticsSource, error) {
-	var tool, email, key string
+	var (
+		tool, email, key string
+		rank             = false
+	)
 
 	if d, ok := config["tool"]; ok {
 		tool = d.(string)
@@ -254,6 +257,10 @@ func NewEntrezStatisticsSource(config map[string]interface{}, options ...func(so
 
 	if d, ok := config["key"]; ok {
 		key = d.(string)
+	}
+
+	if d, ok := config["rank"]; ok {
+		rank = d.(bool)
 	}
 
 	var searchOptions stats.SearchOptions
@@ -275,7 +282,8 @@ func NewEntrezStatisticsSource(config map[string]interface{}, options ...func(so
 		stats.EntrezAPIKey(key),
 		stats.EntrezEmail(email),
 		stats.EntrezTool(tool),
-		stats.EntrezOptions(searchOptions))
+		stats.EntrezOptions(searchOptions),
+		stats.EntrezRank(rank))
 	if err != nil {
 		return e, nil
 	}

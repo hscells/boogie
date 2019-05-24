@@ -486,6 +486,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			switch dsl.Formulation.Options["logic_composer"] {
 			case "nlp":
 				composer = formulation.NewNLPLogicComposer(dsl.Formulation.Options["logic_composer.classpath"])
+			case "manual":
+				composer = formulation.NewManualLogicComposer(dsl.Formulation.Options["logic_composer.output_path"], topic)
 			}
 
 			switch dsl.Formulation.Options["entity_extractor"] {
@@ -514,6 +516,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 					return g, err
 				}
 				expander = formulation.NewMedGenExpander(e)
+			default:
+				expander = nil
 			}
 
 			switch dsl.Formulation.Options["keyword_mapper"] {
@@ -646,7 +650,6 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				if err != nil {
 					return g, err
 				}
-				fmt.Println(line.Score, eval.RelevanceGrade)
 				if line.Score > eval.RelevanceGrade {
 					p = append(p, id)
 				} else {
@@ -657,8 +660,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			e, ok := g.StatisticsSource.(stats.EntrezStatisticsSource)
 			if !ok {
 				return g, errors.New("the entrez statistics source must be configured to use the dt formulator")
-			}
 
+			}
 			fmt.Println(len(p), len(n))
 
 			pos, err := e.Fetch(p)
