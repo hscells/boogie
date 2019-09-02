@@ -13,7 +13,6 @@ import (
 	"github.com/hscells/groove/formulation"
 	"github.com/hscells/groove/learning"
 	"github.com/hscells/groove/output"
-	"github.com/hscells/groove/pipeline"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
 	"github.com/hscells/groove/stats"
@@ -22,6 +21,7 @@ import (
 	"github.com/hscells/trecresults"
 	"io/ioutil"
 	"os"
+	"path"
 	"strconv"
 )
 
@@ -73,6 +73,22 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 
 	if len(dsl.Output.Evaluations.Measurements) > 0 && len(dsl.Evaluations) == 0 {
 		return g, fmt.Errorf("at least one evaluation measurement must be supplied for the output formats")
+	}
+
+	if len(dsl.Merger) > 0 {
+		if merger, ok := mergers[dsl.Merger]; ok {
+			g.Merger = merger
+		} else {
+			return g, fmt.Errorf("%s is not a valid merger", dsl.Merger)
+		}
+	}
+
+	if len(dsl.Scorer) > 0 {
+		if scorer, ok := scorers[dsl.Scorer]; ok {
+			g.Scorer = scorer
+		} else {
+			return g, fmt.Errorf("%s is not a valid scorer", dsl.Scorer)
+		}
 	}
 
 	g.Measurements = []analysis.Measurement{}
@@ -576,17 +592,15 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			pubdates := dsl.Formulation.Options["pubdates"]
 			semtypes := dsl.Formulation.Options["semtypes"]
 			metamap := dsl.Formulation.Options["metamap"]
+			optimisation, ok := evaluationMapping[dsl.Formulation.Options["optimisation"]]
+			if !ok {
+				return groove.Pipeline{}, fmt.Errorf("%s is not a known evaluation measure", dsl.Formulation.Options["optimisation"])
+			}
 
 			// Find the original query so as to stem it.
-			queries, err := query.TARTask2QueriesSource{}.Load(dsl.Formulation.Options["tar_topics_path"])
+			input, err := query.TARTask2QueriesSource{}.LoadSingle(path.Join(dsl.Formulation.Options["tar_topics_path"], topic))
 			if err != nil {
 				return g, err
-			}
-			var input pipeline.Query
-			for _, q := range queries {
-				if q.Topic == topic {
-					input = q
-				}
 			}
 
 			var (
@@ -603,7 +617,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 
 			switch dsl.Formulation.Options["background_collection"] {
 			case "pubmed":
-				population = formulation.PubMedSet{}
+				population = formulation.NewPubMedSet(g.StatisticsSource.(stats.EntrezStatisticsSource))
 			case "top10000":
 				population, err = formulation.GetPopulationSet(g.StatisticsSource.(stats.EntrezStatisticsSource), analyser)
 				if err != nil {
@@ -634,7 +648,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				}
 			}
 			qrels := g.EvaluationFormatters.EvaluationQrels.Qrels
-			g.QueryFormulator = formulation.NewObjectiveFormulator(input, g.StatisticsSource.(stats.EntrezStatisticsSource), qrels[topic], population, folder, pubdates, semtypes, metamap,
+			g.QueryFormulator = formulation.NewObjectiveFormulator(input, g.StatisticsSource.(stats.EntrezStatisticsSource), qrels[topic], population, folder, pubdates, semtypes, metamap, optimisation,
 				formulation.ObjectiveAnalyser(analyser),
 				formulation.ObjectiveSplitter(splitter))
 		case "dt":

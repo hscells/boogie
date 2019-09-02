@@ -15,6 +15,8 @@ type Pipeline struct {
 	Rewrite           []string               `json:"rewrite"`
 	Output            PipelineOutput         `json:"output"`
 	Cache             []PipelineCache        `json:"cache"`
+	Scorer            string                 `json:"scorer"`
+	Merger            string                 `json:"merger"`
 }
 
 // PipelineUtilities is used to reference external tools or files.

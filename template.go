@@ -81,7 +81,7 @@ func Template(r io.Reader, args ...string) (Pipeline, error) {
 	var p Pipeline
 	t, err := templateString(r, args...)
 	if err != nil {
-		return p, err
+		return Pipeline{}, err
 	}
 	err = json.Unmarshal([]byte(t), &p)
 	return p, err

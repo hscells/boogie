@@ -12,6 +12,8 @@ import (
 	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
+	"github.com/hscells/groove/rank"
+	"github.com/hscells/merging"
 	"github.com/hscells/trecresults"
 	"io/ioutil"
 	"os"
@@ -139,6 +141,13 @@ func RegisterSources(dsl Pipeline) error {
 	if err != nil {
 		return err
 	}
+
+	RegisterScorer("bm25", &rank.BM25Scorer{K1: 1.2, B: 0.75})
+	RegisterScorer("tfidf", &rank.TFIDFScorer{})
+
+	RegisterMerger("combSUM", merging.CombSUM{})
+	RegisterMerger("combMNZ+minmax", merging.CombMNZ{})
+	RegisterMerger("borda+softmax", merging.Borda{})
 
 	// Machine learning models.
 	switch m := dsl.Learning.Model; m {

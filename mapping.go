@@ -11,7 +11,9 @@ import (
 	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/preprocess"
 	"github.com/hscells/groove/query"
+	"github.com/hscells/groove/rank"
 	"github.com/hscells/groove/stats"
+	"github.com/hscells/merging"
 	"github.com/hscells/quickumlsrest"
 	"github.com/hscells/transmute/pipeline"
 	"github.com/hscells/trecresults"
@@ -33,7 +35,17 @@ var (
 	evaluationFormatters               = map[string]output.EvaluationFormatter{}
 	rewriteTransformationMapping       = map[string]learning.Transformation{}
 	modelMapping                       = map[string]learning.Model{}
+	scorers                            = map[string]rank.Scorer{}
+	mergers                            = map[string]merging.Merger{}
 )
+
+func RegisterScorer(name string, scorer rank.Scorer) {
+	scorers[name] = scorer
+}
+
+func RegisterMerger(name string, merger merging.Merger) {
+	mergers[name] = merger
+}
 
 // RegisterQuerySource registers a query source.
 func RegisterQuerySource(name string, source query.QueriesSource) {

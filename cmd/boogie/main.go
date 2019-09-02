@@ -61,6 +61,9 @@ func main() {
 
 	// Parse the dsl file into a struct.
 	dsl, err := boogie.Template(bytes.NewBuffer(b), args.TemplateArgs...)
+	if err != nil {
+		panic(err)
+	}
 
 	// Create the main pipeline.
 	g, err := boogie.CreatePipeline(dsl)
@@ -81,8 +84,8 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		trecEvalFile.Truncate(0)
-		trecEvalFile.Seek(0, 0)
+		//trecEvalFile.Truncate(0)
+		//trecEvalFile.Seek(0, 0)
 		defer trecEvalFile.Close()
 	}
 
