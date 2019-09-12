@@ -75,22 +75,6 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 		return g, fmt.Errorf("at least one evaluation measurement must be supplied for the output formats")
 	}
 
-	if len(dsl.Merger) > 0 {
-		if merger, ok := mergers[dsl.Merger]; ok {
-			g.Merger = merger
-		} else {
-			return g, fmt.Errorf("%s is not a valid merger", dsl.Merger)
-		}
-	}
-
-	if len(dsl.Scorer) > 0 {
-		if scorer, ok := scorers[dsl.Scorer]; ok {
-			g.Scorer = scorer
-		} else {
-			return g, fmt.Errorf("%s is not a valid scorer", dsl.Scorer)
-		}
-	}
-
 	g.Measurements = []analysis.Measurement{}
 	for _, measurementName := range dsl.Measurements {
 		if m, ok := measurementMapping[measurementName]; ok {
@@ -704,6 +688,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			return g, fmt.Errorf("no such query formulation method: %s", dsl.Formulation.Method)
 		}
 	}
+
+	g.CLF = dsl.CLFOptions
 
 	g.Transformations.Output = dsl.Transformations.Output
 	g.OutputTrec.Path = dsl.Output.Trec.Output

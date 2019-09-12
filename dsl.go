@@ -1,5 +1,7 @@
 package boogie
 
+import "github.com/hscells/groove/rank"
+
 // Pipeline is a representation of the DSL.
 type Pipeline struct {
 	Query             PipelineQuery          `json:"query"`
@@ -16,7 +18,7 @@ type Pipeline struct {
 	Output            PipelineOutput         `json:"output"`
 	Cache             []PipelineCache        `json:"cache"`
 	Scorer            string                 `json:"scorer"`
-	Merger            string                 `json:"merger"`
+	CLFOptions        rank.CLFOptions        `json:"clf"`
 }
 
 // PipelineUtilities is used to reference external tools or files.
