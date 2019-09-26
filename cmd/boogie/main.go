@@ -10,7 +10,7 @@ import (
 	"github.com/hscells/boogie"
 	"github.com/hscells/groove/eval"
 	"github.com/hscells/groove/pipeline"
-	"github.com/hscells/transmute/backend"
+	"github.com/hscells/transmute"
 	"io"
 	"io/ioutil"
 	"log"
@@ -102,7 +102,7 @@ func main() {
 		case pipeline.Transformation:
 			// Output the transformed queries
 			if len(dsl.Transformations.Output) > 0 {
-				s, err := backend.NewCQRQuery(result.Transformation.Transformation).StringPretty()
+				s, err := transmute.CompileCqr2PubMed(result.Transformation.Transformation)
 				if err != nil {
 					panic(err)
 				}

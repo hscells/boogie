@@ -61,6 +61,8 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterTransformationBoolean("and_simplify", preprocess.AndSimplify)
 	RegisterTransformationBoolean("or_simplify", preprocess.OrSimplify)
 	RegisterTransformationBoolean("rct_filter", preprocess.RCTFilter)
+	RegisterTransformationBoolean("relax_phrases", preprocess.RelaxPhrases)
+	RegisterTransformationBoolean("remove_exp", preprocess.RemoveExplosionMeSH)
 	RegisterTransformationElasticsearch("analyse", preprocess.Analyse)
 	RegisterTransformationElasticsearch("set_analyse", preprocess.SetAnalyseField)
 
