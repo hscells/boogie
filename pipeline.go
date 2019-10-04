@@ -1,6 +1,7 @@
 package boogie
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -518,6 +519,25 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				expander = formulation.NewMedGenExpander(e)
 			default:
 				expander = nil
+			}
+
+			switch dsl.Formulation.Options["relevance_feedback"] {
+			case "rf":
+				f, err := os.OpenFile(dsl.Formulation.Options["relevance_feedback.feedback"], os.O_RDONLY, 0664)
+				if err != nil {
+					return groove.Pipeline{}, err
+				}
+				var pmids []int
+				s := bufio.NewScanner(f)
+				for s.Scan() {
+					line := s.Text()
+					x, err := strconv.Atoi(line)
+					if err != nil {
+						return groove.Pipeline{}, err
+					}
+					pmids = append(pmids, x)
+				}
+
 			}
 
 			switch dsl.Formulation.Options["keyword_mapper"] {
