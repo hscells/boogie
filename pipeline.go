@@ -521,13 +521,13 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				expander = nil
 			}
 
+			var pmids []int
 			switch dsl.Formulation.Options["relevance_feedback"] {
 			case "rf":
 				f, err := os.OpenFile(dsl.Formulation.Options["relevance_feedback.feedback"], os.O_RDONLY, 0664)
 				if err != nil {
 					return groove.Pipeline{}, err
 				}
-				var pmids []int
 				s := bufio.NewScanner(f)
 				for s.Scan() {
 					line := s.Text()
@@ -589,7 +589,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				}
 			}
 
-			g.QueryFormulator = formulation.NewConceptualFormulator(title, topic, composer, extractor, expander, mapper, processing...)
+			g.QueryFormulator = formulation.NewConceptualFormulator(title, topic, composer, extractor, expander, mapper, pmids, g.StatisticsSource.(stats.EntrezStatisticsSource), processing...)
 		case "objective":
 			topic := dsl.Formulation.Options["topic"]
 			folder := dsl.Formulation.Options["folder"]
