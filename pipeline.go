@@ -3,6 +3,7 @@ package boogie
 import (
 	"bufio"
 	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 	"github.com/hscells/groove/stats"
 	"github.com/hscells/guru"
 	"github.com/hscells/metawrap"
+	"github.com/hscells/quickumlsrest"
 	"github.com/hscells/trecresults"
 	"io/ioutil"
 	"os"
@@ -710,6 +712,37 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 	}
 
 	g.CLF = dsl.CLFOptions
+	if g.CLF.CLFVariations {
+		// First, load the cui2vec embeddings.
+		f, err := os.OpenFile(dsl.Utilities.CUI2vec, os.O_RDONLY, 0664)
+		if err != nil {
+			return g, err
+		}
+		e, err := cui2vec.NewPrecomputedEmbeddings(f)
+		if err != nil {
+			return g, err
+		}
+
+		// Next, load the cui2vec mappings file.
+		m, err := cui2vec.LoadCUIMapping(dsl.Utilities.CUIMapping)
+		if err != nil {
+			return g, err
+		}
+
+		// Lastly, load the file that contains cached cui similarity mappings.
+		f, err = os.OpenFile(dsl.Utilities.QuickUMLSCache, os.O_RDONLY, os.ModePerm)
+		if err != nil {
+			return g, err
+		}
+		var cache quickumlsrest.Cache
+		err = gob.NewDecoder(f).Decode(&cache)
+		if err != nil {
+			return g, err
+		}
+
+		// Now we can set these options for CLF.
+		g.CLF = g.CLF.SetVariationOptions(e, m, cache)
+	}
 
 	g.Transformations.Output = dsl.Transformations.Output
 	g.OutputTrec.Path = dsl.Output.Trec.Output
