@@ -604,7 +604,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			}
 
 			// Find the original query so as to stem it.
-			input, err := query.TARTask2QueriesSource{}.LoadSingle(path.Join(dsl.Formulation.Options["tar_topics_path"], topic))
+			input, err := query.NewTransmuteQuerySource(query.MedlineTransmutePipeline).LoadSingle(path.Join(dsl.Formulation.Options["tar_topics_path"], topic))
 			if err != nil {
 				return g, err
 			}
@@ -636,6 +636,15 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				splitter = formulation.RandomSplitter(1000)
 			}
 
+			minDocs := 50
+			if v, ok := dsl.Formulation.Options["min_docs"]; ok {
+				d, err := strconv.Atoi(v)
+				if err != nil {
+					return g, err
+				}
+				minDocs = d
+			}
+
 			for _, pp := range dsl.Formulation.PostProcessing {
 				switch pp {
 				case "stem":
@@ -656,7 +665,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			qrels := g.EvaluationFormatters.EvaluationQrels.Qrels
 			g.QueryFormulator = formulation.NewObjectiveFormulator(input, g.StatisticsSource.(stats.EntrezStatisticsSource), qrels[topic], population, folder, pubdates, semtypes, metamap, optimisation,
 				formulation.ObjectiveAnalyser(analyser),
-				formulation.ObjectiveSplitter(splitter))
+				formulation.ObjectiveSplitter(splitter),
+				formulation.ObjectiveMinDocs(minDocs))
 		case "dt":
 			qrels := g.EvaluationFormatters.EvaluationQrels.Qrels
 			topic := dsl.Formulation.Options["topic"]
