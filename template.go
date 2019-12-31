@@ -70,6 +70,10 @@ func templateString(r io.Reader, args ...string) (string, error) {
 				if strings.Contains(line, template) {
 					line = strings.Replace(line, template, v, -1)
 				}
+				template2 := fmt.Sprintf("@%s", k)
+				if strings.Contains(line, template2) {
+					line = strings.Replace(line, template2, v, -1)
+				}
 			}
 			buff += fmt.Sprintln(line)
 		}
