@@ -2,6 +2,7 @@ package boogie
 
 import (
 	"bytes"
+	"github.com/hscells/groove/output"
 	"github.com/hscells/groove/pipeline"
 	"github.com/hscells/transmute"
 	"io/ioutil"
@@ -12,7 +13,6 @@ import (
 )
 
 func Execute(dsl Pipeline, pipelineChannel chan pipeline.Result) error {
-	evaluations := make([]string, len(dsl.Evaluations))
 	var trecEvalFile *os.File
 	if len(dsl.Output.Trec.Output) > 0 {
 		var err error
@@ -21,17 +21,17 @@ func Execute(dsl Pipeline, pipelineChannel chan pipeline.Result) error {
 			return err
 		}
 	}
+
+	measurements := make(map[string]map[string]float64)
+	evaluations := make(map[string]map[string]float64)
+
 	defer trecEvalFile.Close()
 	for result := range pipelineChannel {
 		switch result.Type {
 		case pipeline.Measurement:
+			measurements[result.Topic] = result.Measurements
 			// Process the measurement outputs.
-			for i, formatter := range dsl.Output.Measurements {
-				err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(result.Measurements[i]).Bytes(), 0644)
-				if err != nil {
-					return err
-				}
-			}
+
 		case pipeline.Transformation:
 			// Output the transformed queries
 			if len(dsl.Transformations.Output) > 0 {
@@ -46,9 +46,7 @@ func Execute(dsl Pipeline, pipelineChannel chan pipeline.Result) error {
 				}
 			}
 		case pipeline.Evaluation:
-			for i, e := range result.Evaluations {
-				evaluations[i] = e
-			}
+			evaluations[result.Topic] = result.Evaluations
 		case pipeline.TrecResult:
 			if result.TrecResults != nil && len(*result.TrecResults) > 0 {
 				l := make([]string, len(*result.TrecResults))
@@ -71,11 +69,66 @@ func Execute(dsl Pipeline, pipelineChannel chan pipeline.Result) error {
 		}
 	}
 
-	// Process the evaluation outputs.
-	for i, formatter := range dsl.Output.Evaluations.Measurements {
-		err := ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(evaluations[i]).Bytes(), 0644)
-		if err != nil {
-			return err
+	topics := make([]string, len(evaluations))
+	i := 0
+	for topic := range evaluations {
+		topics[i] = topic
+		i++
+	}
+
+	if len(evaluations) > 0 {
+		for _, formatter := range dsl.Output.Evaluations.Measurements {
+			var f output.EvaluationFormatter
+			switch formatter.Format {
+			case "json":
+				f = output.JsonEvaluationFormatter
+			default:
+				log.Println("unexpected evaluation formatter, using json")
+				f = output.JsonEvaluationFormatter
+			}
+
+			formatted, err := f(evaluations)
+			if err != nil {
+				return err
+			}
+			err = ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(formatted).Bytes(), 0644)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(measurements) > 0 {
+		headers := make([]string, len(dsl.Measurements))
+		data := make([][]float64, len(dsl.Measurements))
+		for i, measure := range dsl.Measurements {
+			headers[i] = measurementMapping[measure].Name()
+		}
+
+		for i, topic := range topics {
+			data[i] = make([]float64, len(headers))
+			for j, header := range headers {
+				data[i][j] = measurements[topic][header]
+			}
+		}
+		for _, formatter := range dsl.Output.Measurements {
+			var (
+				r   string
+				err error
+			)
+			switch formatter.Format {
+			case "csv":
+				r, err = output.CsvMeasurementFormatter(topics, headers, data)
+			case "json":
+				r, err = output.JsonMeasurementFormatter(topics, headers, data)
+			}
+			if err != nil {
+				return err
+			}
+			err = ioutil.WriteFile(formatter.Filename, bytes.NewBufferString(r).Bytes(), 0644)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
