@@ -19,6 +19,7 @@ import (
 	"github.com/hscells/groove/query"
 	"github.com/hscells/groove/stats"
 	"github.com/hscells/guru"
+	"github.com/hscells/headway"
 	"github.com/hscells/metawrap"
 	"github.com/hscells/quickumlsrest"
 	"github.com/hscells/trecresults"
@@ -754,5 +755,11 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 
 	g.Transformations.Output = dsl.Transformations.Output
 	g.OutputTrec.Path = dsl.Output.Trec.Output
+
+	var hw *headway.Client
+	if len(dsl.Headway.Host) > 0 {
+		hw = headway.NewClient(dsl.Headway.Host, dsl.Headway.Secret)
+	}
+	g.Headway = hw
 	return g, nil
 }
