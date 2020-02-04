@@ -24,7 +24,6 @@ import (
 	"github.com/hscells/trecresults"
 	"io/ioutil"
 	"os"
-	"path"
 	"strconv"
 )
 
@@ -475,9 +474,6 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 	if len(dsl.Formulation.Method) > 0 {
 		switch dsl.Formulation.Method {
 		case "conceptual":
-			title := dsl.Formulation.Options["title"]
-			topic := dsl.Formulation.Options["topic"]
-
 			var (
 				composer   formulation.LogicComposer
 				extractor  formulation.EntityExtractor
@@ -489,8 +485,10 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			switch dsl.Formulation.Options["logic_composer"] {
 			case "nlp":
 				composer = formulation.NewNLPLogicComposer(dsl.Formulation.Options["logic_composer.classpath"])
-			case "manual":
-				composer = formulation.NewManualLogicComposer(dsl.Formulation.Options["logic_composer.output_path"], topic)
+			//case "manual":
+			//	composer = formulation.NewManualLogicComposer()
+			case "rake":
+				composer = formulation.NewRAKELogicComposer(dsl.Formulation.Options["semtypes"], dsl.Formulation.Options["metamap_url"])
 			}
 
 			switch dsl.Formulation.Options["entity_extractor"] {
@@ -573,25 +571,25 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				mapper = formulation.NewMetaMapKeywordMapper(metawrap.HTTPClient{URL: dsl.Formulation.Options["metamap_url"]}, m)
 			}
 
-			for _, pp := range dsl.Formulation.PostProcessing {
-				switch pp {
-				case "stem":
-					// Find the original query so as to stem it.
-					queries, err := query.TARTask2QueriesSource{}.Load(dsl.Formulation.Options["post_processing.tar_topics_path"])
-					if err != nil {
-						return g, err
-					}
-					var original cqr.CommonQueryRepresentation
-					for _, q := range queries {
-						if q.Topic == topic {
-							original = q.Query
-						}
-					}
-					processing = append(processing, formulation.Stem(original))
-				}
-			}
+			//for _, pp := range dsl.Formulation.PostProcessing {
+			//switch pp {
+			//case "stem":
+			//	// Find the original query so as to stem it.
+			//	queries, err := query.TARTask2QueriesSource{}.Load(dsl.Formulation.Options["post_processing.tar_topics_path"])
+			//	if err != nil {
+			//		return g, err
+			//	}
+			//	var original cqr.CommonQueryRepresentation
+			//	for _, q := range queries {
+			//		if q.Topic == topic {
+			//			original = q.Query
+			//		}
+			//	}
+			//	processing = append(processing, formulation.Stem(original))
+			//}
+			//}
 
-			g.QueryFormulator = formulation.NewConceptualFormulator(title, topic, composer, extractor, expander, mapper, pmids, g.StatisticsSource.(stats.EntrezStatisticsSource), processing...)
+			g.QueryFormulator = formulation.NewConceptualFormulator(composer, extractor, expander, mapper, pmids, g.StatisticsSource.(stats.EntrezStatisticsSource), processing...)
 		case "objective":
 			topic := dsl.Formulation.Options["topic"]
 			folder := dsl.Formulation.Options["folder"]
@@ -603,11 +601,11 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				return groove.Pipeline{}, fmt.Errorf("%s is not a known evaluation measure", dsl.Formulation.Options["optimisation"])
 			}
 
-			// Find the original query so as to stem it.
-			input, err := query.NewTransmuteQuerySource(query.MedlineTransmutePipeline).LoadSingle(path.Join(dsl.Formulation.Options["tar_topics_path"], topic))
-			if err != nil {
-				return g, err
-			}
+			//// Find the original query so as to stem it.
+			//input, err := query.NewTransmuteQuerySource(query.MedlineTransmutePipeline).LoadSingle(path.Join(dsl.Formulation.Options["tar_topics_path"], topic))
+			//if err != nil {
+			//	return g, err
+			//}
 
 			var (
 				processing []formulation.PostProcess
@@ -663,7 +661,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				}
 			}
 			qrels := g.EvaluationFormatters.EvaluationQrels.Qrels
-			g.QueryFormulator = formulation.NewObjectiveFormulator(input, g.StatisticsSource.(stats.EntrezStatisticsSource), qrels[topic], population, folder, pubdates, semtypes, metamap, optimisation,
+			g.QueryFormulator = formulation.NewObjectiveFormulator(g.StatisticsSource.(stats.EntrezStatisticsSource), qrels[topic], population, folder, pubdates, semtypes, metamap, optimisation,
 				formulation.ObjectiveAnalyser(analyser),
 				formulation.ObjectiveSplitter(splitter),
 				formulation.ObjectiveMinDocs(minDocs))

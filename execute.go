@@ -8,11 +8,22 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
 func Execute(dsl Pipeline, pipelineChannel chan pipeline.Result) error {
+	// Handle the case if the method is not run as a command.s
+	if measurementMapping == nil || len(measurementMapping) == 0 {
+		err := RegisterSources(dsl)
+		if err != nil {
+			return err
+		}
+	}
+
+	// File that will contain TREC run data.
 	var trecEvalFile *os.File
 	if len(dsl.Output.Trec.Output) > 0 {
 		var err error
@@ -30,8 +41,8 @@ func Execute(dsl Pipeline, pipelineChannel chan pipeline.Result) error {
 		switch result.Type {
 		case pipeline.Measurement:
 			measurements[result.Topic] = result.Measurements
-			// Process the measurement outputs.
-
+		case pipeline.Evaluation:
+			evaluations[result.Topic] = result.Evaluations
 		case pipeline.Transformation:
 			// Output the transformed queries
 			if len(dsl.Transformations.Output) > 0 {
@@ -45,8 +56,6 @@ func Execute(dsl Pipeline, pipelineChannel chan pipeline.Result) error {
 					return err
 				}
 			}
-		case pipeline.Evaluation:
-			evaluations[result.Topic] = result.Evaluations
 		case pipeline.TrecResult:
 			if result.TrecResults != nil && len(*result.TrecResults) > 0 {
 				l := make([]string, len(*result.TrecResults))
@@ -59,6 +68,71 @@ func Execute(dsl Pipeline, pipelineChannel chan pipeline.Result) error {
 				}
 				result.TrecResults = nil
 			}
+		case pipeline.Formulation:
+			for _, s := range result.Formulation.Sup {
+				// Create the folder the data will be contained in.
+				err := os.MkdirAll(path.Join(dsl.Formulation.Method, s.Name), 0777)
+				if err != nil {
+					return err
+				}
+
+				for _, d := range s.Data {
+					log.Printf("writing supplimentary file %s\n", path.Join(dsl.Formulation.Method, s.Name, d.Name))
+					// Create and open the file that will contain the data.
+					f, err := os.OpenFile(path.Join(dsl.Formulation.Method, s.Name, d.Name), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0664)
+					if err != nil {
+						return err
+					}
+					// Marshal the data into bytes for writing to disk.
+					b, err := d.Value.Marshal()
+					if err != nil {
+						return err
+					}
+					// Write those bytes to disk.
+					_, err = f.Write(b)
+					if err != nil {
+						return err
+					}
+					// Close that file.
+					err = f.Close()
+					if err != nil {
+						return err
+					}
+				}
+			}
+
+			// Create the folder that will contain the formulated query/queries.
+			err := os.MkdirAll(dsl.Formulation.Method, 0777)
+			if err != nil {
+				return err
+			}
+			for i, q := range result.Formulation.Queries {
+				log.Println(q)
+				err := os.MkdirAll(path.Join(dsl.Formulation.Method, strconv.Itoa(i)), 0777)
+				if err != nil {
+					return err
+				}
+				// Compile the query to CQR.
+				s, err := transmute.CompileCqr2PubMed(q)
+				if err != nil {
+					return err
+				}
+				// Open the file that will contain the query.
+				f, err := os.OpenFile(path.Join(dsl.Formulation.Method, strconv.Itoa(i), result.Topic), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0664)
+				if err != nil {
+					return err
+				}
+				// Write the query to disk.
+				_, err = f.WriteString(s)
+				if err != nil {
+					return err
+				}
+				// Close the file.
+				err = f.Close()
+				if err != nil {
+					return err
+				}
+			}
 		case pipeline.Error:
 			if len(result.Topic) > 0 {
 				log.Printf("an error occurred in topic %v", result.Topic)
@@ -67,13 +141,6 @@ func Execute(dsl Pipeline, pipelineChannel chan pipeline.Result) error {
 			}
 			return result.Error
 		}
-	}
-
-	topics := make([]string, len(evaluations))
-	i := 0
-	for topic := range evaluations {
-		topics[i] = topic
-		i++
 	}
 
 	if len(evaluations) > 0 {
@@ -99,15 +166,21 @@ func Execute(dsl Pipeline, pipelineChannel chan pipeline.Result) error {
 	}
 
 	if len(measurements) > 0 {
+		topics := make([]string, len(measurements))
+		i := 0
+		for topic := range measurements {
+			topics[i] = topic
+			i++
+		}
+		i = 0
 		headers := make([]string, len(dsl.Measurements))
 		data := make([][]float64, len(dsl.Measurements))
 		for i, measure := range dsl.Measurements {
 			headers[i] = measurementMapping[measure].Name()
 		}
-
-		for i, topic := range topics {
-			data[i] = make([]float64, len(headers))
-			for j, header := range headers {
+		for i, header := range headers {
+			data[i] = make([]float64, len(topics))
+			for j, topic := range topics {
 				data[i][j] = measurements[topic][header]
 			}
 		}

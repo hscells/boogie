@@ -49,6 +49,7 @@ func RegisterSources(dsl Pipeline) error {
 	RegisterQuerySource("cqr", NewTransmuteQuerySource(query.CQRTransmutePipeline, dsl.Query.Options))
 	RegisterQuerySource("keyword", NewKeywordQuerySource(dsl.Query.Options))
 	RegisterQuerySource("protocol", query.NewProtocolQuerySource())
+	RegisterQuerySource("tar", query.TARTask2QueriesSource{})
 
 	// Preprocessor sources.
 	RegisterPreprocessor("alphanum", preprocess.AlphaNum)
