@@ -23,6 +23,7 @@ import (
 	"github.com/hscells/metawrap"
 	"github.com/hscells/quickumlsrest"
 	"github.com/hscells/trecresults"
+	"gopkg.in/olivere/elastic.v7"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -565,6 +566,14 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 						return g, err
 					}
 					m = formulation.Alias(c)
+				case "elastic_umls":
+					c, err := elastic.NewSimpleClient(
+						elastic.SetURL(dsl.Formulation.Options["keyword_mapper.mapper.elastic_umls"]),
+						elastic.SetBasicAuth(dsl.Formulation.Options["keyword_mapper.mapper.elastic_umls.username"], dsl.Formulation.Options["keyword_mapper.mapper.elastic_umls.password"]))
+					if err != nil {
+						return g, err
+					}
+					m = formulation.ElasticUMLS(c)
 				}
 				if len(dsl.Formulation.Options["keyword_mapper.add_mesh"]) > 0 {
 					m = formulation.MeSHMapper(m)
