@@ -484,13 +484,23 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				processing []formulation.PostProcess
 			)
 
+			var elasticClient *elastic.Client
+			if dsl.Formulation.Options["logic_composer"] == "rake" || dsl.Formulation.Options["keyword_mapper"] == "elastic_umls" {
+				elasticClient, err = elastic.NewSimpleClient(
+					elastic.SetURL(dsl.Formulation.Options["keyword_mapper.mapper.elastic_umls"]),
+					elastic.SetBasicAuth(dsl.Formulation.Options["keyword_mapper.mapper.elastic_umls.username"], dsl.Formulation.Options["keyword_mapper.mapper.elastic_umls.password"]))
+				if err != nil {
+					return g, err
+				}
+			}
+
 			switch dsl.Formulation.Options["logic_composer"] {
 			case "nlp":
 				composer = formulation.NewNLPLogicComposer(dsl.Formulation.Options["logic_composer.classpath"])
 			//case "manual":
 			//	composer = formulation.NewManualLogicComposer()
 			case "rake":
-				composer = formulation.NewRAKELogicComposer(dsl.Formulation.Options["semtypes"], dsl.Formulation.Options["metamap_url"])
+				composer = formulation.NewRAKELogicComposer(dsl.Formulation.Options["semtypes"], dsl.Formulation.Options["metamap_url"], elasticClient)
 			}
 
 			switch dsl.Formulation.Options["entity_extractor"] {
@@ -567,13 +577,11 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 					}
 					m = formulation.Alias(c)
 				case "elastic_umls":
-					c, err := elastic.NewSimpleClient(
-						elastic.SetURL(dsl.Formulation.Options["keyword_mapper.mapper.elastic_umls"]),
-						elastic.SetBasicAuth(dsl.Formulation.Options["keyword_mapper.mapper.elastic_umls.username"], dsl.Formulation.Options["keyword_mapper.mapper.elastic_umls.password"]))
+
 					if err != nil {
 						return g, err
 					}
-					m = formulation.ElasticUMLS(c)
+					m = formulation.ElasticUMLS(elasticClient)
 				}
 				if len(dsl.Formulation.Options["keyword_mapper.add_mesh"]) > 0 {
 					m = formulation.MeSHMapper(m)
