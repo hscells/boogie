@@ -500,7 +500,12 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			//case "manual":
 			//	composer = formulation.NewManualLogicComposer()
 			case "rake":
-				composer = formulation.NewRAKELogicComposer(dsl.Formulation.Options["semtypes"], dsl.Formulation.Options["metamap_url"], elasticClient)
+				fmt.Println(dsl.Formulation.Options["entity_expander.cui2vec_rpc"])
+				client, err := cui2vec.NewVecClient(dsl.Formulation.Options["entity_expander.cui2vec_rpc"])
+				if err != nil {
+					panic(err)
+				}
+				composer = formulation.NewRAKELogicComposer(dsl.Formulation.Options["semtypes"], dsl.Formulation.Options["metamap_url"], elasticClient, client)
 			}
 
 			switch dsl.Formulation.Options["entity_extractor"] {
@@ -523,12 +528,18 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 					return g, err
 				}
 				expander = formulation.NewCui2VecEntityExpander(*e)
-			case "medgen":
-				e, err := NewEntrezStatisticsSource(dsl.Statistic.Options, stats.EntrezDb("medgen"))
+			case "cui2vec_rpc":
+				client, err := cui2vec.NewVecClient(dsl.Formulation.Options["entity_expander.cui2vec_rpc"])
 				if err != nil {
-					return g, err
+					panic(err)
 				}
-				expander = formulation.NewMedGenExpander(e)
+				expander = formulation.NewCui2VecRPCEntityExpander(client)
+			//case "medgen":
+			//	e, err := NewEntrezStatisticsSource(dsl.Statistic.Options, stats.EntrezDb("medgen"))
+			//	if err != nil {
+			//		return g, err
+			//	}
+			//	expander = formulation.NewMedGenExpander(e)
 			default:
 				expander = nil
 			}
@@ -577,7 +588,6 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 					}
 					m = formulation.Alias(c)
 				case "elastic_umls":
-
 					if err != nil {
 						return g, err
 					}
