@@ -645,6 +645,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			switch dsl.Formulation.Options["analyser"] {
 			case "term_frequency":
 				analyser = formulation.TermFrequencyAnalyser
+			case "rake":
+				analyser = formulation.RAKEAnalyser
 			}
 
 			switch dsl.Formulation.Options["background_collection"] {
@@ -688,8 +690,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 					processing = append(processing, formulation.Stem(original))
 				}
 			}
-			qrels := g.EvaluationFormatters.EvaluationQrels.Qrels
-			g.QueryFormulator = formulation.NewObjectiveFormulator(g.StatisticsSource.(stats.EntrezStatisticsSource), qrels[topic], population, folder, pubdates, semtypes, metamap, optimisation,
+			qrels := g.EvaluationFormatters.EvaluationQrels
+			g.QueryFormulator = formulation.NewObjectiveFormulator(g.StatisticsSource.(stats.EntrezStatisticsSource), qrels, population, folder, pubdates, semtypes, metamap, optimisation,
 				formulation.ObjectiveAnalyser(analyser),
 				formulation.ObjectiveSplitter(splitter),
 				formulation.ObjectiveMinDocs(minDocs))
