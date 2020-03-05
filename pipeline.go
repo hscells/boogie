@@ -628,7 +628,12 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			if !ok {
 				return groove.Pipeline{}, fmt.Errorf("%s is not a known evaluation measure", dsl.Formulation.Options["optimisation"])
 			}
-
+			elasticClient, err := elastic.NewSimpleClient(
+				elastic.SetURL(dsl.Formulation.Options["elastic_umls"]),
+				elastic.SetBasicAuth(dsl.Formulation.Options["elastic_umls.username"], dsl.Formulation.Options["elastic_umls.password"]))
+			if err != nil {
+				return g, err
+			}
 			//// Find the original query so as to stem it.
 			//input, err := query.NewTransmuteQuerySource(query.MedlineTransmutePipeline).LoadSingle(path.Join(dsl.Formulation.Options["tar_topics_path"], topic))
 			//if err != nil {
@@ -691,7 +696,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				}
 			}
 			qrels := g.EvaluationFormatters.EvaluationQrels
-			g.QueryFormulator = formulation.NewObjectiveFormulator(g.StatisticsSource.(stats.EntrezStatisticsSource), qrels, population, folder, pubdates, semtypes, metamap, optimisation,
+			g.QueryFormulator = formulation.NewObjectiveFormulator(g.StatisticsSource.(stats.EntrezStatisticsSource), elasticClient, qrels, population, folder, pubdates, semtypes, metamap, optimisation,
 				formulation.ObjectiveAnalyser(analyser),
 				formulation.ObjectiveSplitter(splitter),
 				formulation.ObjectiveMinDocs(minDocs))
