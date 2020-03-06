@@ -647,7 +647,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			)
 
 			switch dsl.Formulation.Options["analyser"] {
-			case "term_frequency":
+			case "term":
 				analyser = formulation.TermFrequencyAnalyser
 			case "rake":
 				analyser = formulation.RAKEAnalyser
@@ -696,7 +696,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			}
 			qrels := g.EvaluationFormatters.EvaluationQrels
 			g.QueryFormulator = formulation.NewObjectiveFormulator(g.StatisticsSource.(stats.EntrezStatisticsSource), elasticClient, qrels, population, folder, pubdates, semtypes, metamap, optimisation,
-				formulation.ObjectiveAnalyser(analyser),
+				formulation.ObjectiveAnalyser(analyser, dsl.Formulation.Options["analyser"]),
 				formulation.ObjectiveSplitter(splitter),
 				formulation.ObjectiveMinDocs(minDocs),
 				formulation.ObjectiveSeed(seed))
