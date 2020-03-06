@@ -624,6 +624,10 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			pubdates := dsl.Formulation.Options["pubdates"]
 			semtypes := dsl.Formulation.Options["semtypes"]
 			metamap := dsl.Formulation.Options["metamap"]
+			seed, err := strconv.Atoi(dsl.Formulation.Options["seed"])
+			if err != nil {
+				panic(err)
+			}
 			optimisation, ok := evaluationMapping[dsl.Formulation.Options["optimisation"]]
 			if !ok {
 				return groove.Pipeline{}, fmt.Errorf("%s is not a known evaluation measure", dsl.Formulation.Options["optimisation"])
@@ -634,11 +638,6 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			if err != nil {
 				return g, err
 			}
-			//// Find the original query so as to stem it.
-			//input, err := query.NewTransmuteQuerySource(query.MedlineTransmutePipeline).LoadSingle(path.Join(dsl.Formulation.Options["tar_topics_path"], topic))
-			//if err != nil {
-			//	return g, err
-			//}
 
 			var (
 				processing []formulation.PostProcess
@@ -699,7 +698,8 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 			g.QueryFormulator = formulation.NewObjectiveFormulator(g.StatisticsSource.(stats.EntrezStatisticsSource), elasticClient, qrels, population, folder, pubdates, semtypes, metamap, optimisation,
 				formulation.ObjectiveAnalyser(analyser),
 				formulation.ObjectiveSplitter(splitter),
-				formulation.ObjectiveMinDocs(minDocs))
+				formulation.ObjectiveMinDocs(minDocs),
+				formulation.ObjectiveSeed(seed))
 		case "dt":
 			qrels := g.EvaluationFormatters.EvaluationQrels.Qrels
 			topic := dsl.Formulation.Options["topic"]
