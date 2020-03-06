@@ -665,7 +665,7 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 
 			switch dsl.Formulation.Options["splitter"] {
 			case "random":
-				splitter = formulation.RandomSplitter(1000)
+				splitter = formulation.RandomSplitter(seed)
 			}
 
 			minDocs := 50
