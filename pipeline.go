@@ -505,7 +505,24 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 				if err != nil {
 					panic(err)
 				}
-				composer = formulation.NewRAKELogicComposer(dsl.Formulation.Options["semtypes"], dsl.Formulation.Options["metamap_url"], elasticClient, client)
+				f, err := os.Open(dsl.Formulation.Options["logic_composer.titles"])
+				if err != nil {
+					panic(err)
+				}
+				titles := make(map[string]string)
+				err = json.NewDecoder(f).Decode(&titles)
+				if err != nil {
+					panic(err)
+				}
+				q, err := os.Open(dsl.Formulation.Options["logic_composer.dev_qrels"])
+				if err != nil {
+					panic(err)
+				}
+				qrels, err := trecresults.QrelsFromReader(q)
+				if err != nil {
+					panic(err)
+				}
+				composer = formulation.NewRAKELogicComposer(dsl.Formulation.Options["semtypes"], dsl.Formulation.Options["metamap_url"], titles, qrels, elasticClient, client)
 			}
 
 			switch dsl.Formulation.Options["entity_extractor"] {
@@ -560,7 +577,16 @@ func CreatePipeline(dsl Pipeline) (groove.Pipeline, error) {
 					}
 					pmids = append(pmids, x)
 				}
-
+			case "rf_titles":
+				f, err := os.OpenFile(dsl.Formulation.Options["relevance_feedback.feedback"], os.O_RDONLY, 0664)
+				if err != nil {
+					return groove.Pipeline{}, err
+				}
+				rfTitles := make(map[string]string)
+				err = json.NewDecoder(f).Decode(&rfTitles)
+				if err != nil {
+					return groove.Pipeline{}, err
+				}
 			}
 
 			switch dsl.Formulation.Options["keyword_mapper"] {
