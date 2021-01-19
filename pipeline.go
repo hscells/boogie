@@ -23,7 +23,7 @@ import (
 	"github.com/hscells/metawrap"
 	"github.com/hscells/quickumlsrest"
 	"github.com/hscells/trecresults"
-	"gopkg.in/olivere/elastic.v7"
+	"github.com/olivere/elastic/v7"
 	"io/ioutil"
 	"os"
 	"strconv"
