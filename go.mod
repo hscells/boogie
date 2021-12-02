@@ -22,3 +22,5 @@ require (
 	github.com/olivere/elastic/v7 v7.0.22
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 )
+
+replace github.com/hscells/groove => ../groove

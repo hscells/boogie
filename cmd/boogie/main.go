@@ -4,8 +4,10 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/alexflint/go-arg"
 	"github.com/hscells/boogie"
+	"github.com/hscells/groove"
 	"github.com/hscells/groove/eval"
 	"github.com/hscells/groove/pipeline"
 	"io"
@@ -21,7 +23,7 @@ type args struct {
 }
 
 func (args) Version() string {
-	return "boogie 16.Jan.2019"
+	return fmt.Sprintf("boogie 16.Jan.2019 using groove %s", groove.Version)
 }
 
 func (args) Description() string {
