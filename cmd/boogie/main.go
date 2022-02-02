@@ -23,7 +23,7 @@ type args struct {
 }
 
 func (args) Version() string {
-	return fmt.Sprintf("boogie 16.Jan.2019 using groove %s", groove.Version)
+	return fmt.Sprintf("boogie 2.Feb.2022 v1 using groove %s", groove.Version)
 }
 
 func (args) Description() string {
